@@ -1,0 +1,6 @@
+vendor
+_vendor*
+.git
+.gitignore
+Dockerfile
+Makefile
