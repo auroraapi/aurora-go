@@ -19,3 +19,4 @@ Each release should have the following sections:
 - standard `config` package (@nkansal96)
 - standard `audio` package (@nkansal96, @akumar010)
 - helper methods to `api` package (@nkansal96)
+- added new API interfaces (@thenathanyang)

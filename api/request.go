@@ -21,11 +21,11 @@ const (
 
 // getHeaders creates and returns a map with base headers required for
 // all requests
-func getHeaders() (headers map[string]string) {
-	headers = make(map[string]string)
-	headers["X-Application-Id"] = config.C.AppID
-	headers["X-Application-Token"] = config.C.AppToken
-	headers["X-Device-ID"] = config.C.DeviceID
+func getHeaders() (*http.Header) {
+	headers = make(http.Header)
+	headers.Add("X-Application-Id", config.C.AppID)
+	headers.Add("X-Application-Token", config.C.AppToken)
+	headers.Add("X-Device-ID", config.C.DeviceID)
 	return
 }
 
