@@ -1,4 +1,4 @@
-package error
+package errors
 
 // APIError is the error that is returned from API calls.
 type APIError struct {

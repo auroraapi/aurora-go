@@ -1,4 +1,4 @@
-package error
+package errors
 
 // Error is a generic error that is returned when something non-API related
 // goes wrong
