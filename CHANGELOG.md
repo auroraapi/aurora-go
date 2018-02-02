@@ -17,4 +17,5 @@ Each release should have the following sections:
 - basic repo layout created
 - standard `errors` package (@nkansal96)
 - standard `config` package (@nkansal96)
+- standard `audio` package (@nkansal96, @akumar010)
 - helper methods to `api` package (@nkansal96)
