@@ -23,8 +23,8 @@ const (
 // all requests
 func getHeaders() (headers map[string]string) {
 	headers = make(map[string]string)
-	headers["X-Application-Id"] = config.C.ApplicationID
-	headers["X-Application-Token"] = config.C.ApplicationToken
+	headers["X-Application-Id"] = config.C.AppID
+	headers["X-Application-Token"] = config.C.AppToken
 	headers["X-Device-ID"] = config.C.DeviceID
 	return
 }

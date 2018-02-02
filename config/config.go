@@ -2,11 +2,11 @@ package config
 
 // Config configures the parameters that this SDK will use to operate
 type Config struct {
-	// ApplicationID is the value to send as the `X-Application-ID` header
-	ApplicationID string
+	// AppID is the value to send as the `X-Application-ID` header
+	AppID string
 
-	// ApplicationToken is the value to send as the `X-Application-Token` header
-	ApplicationToken string
+	// AppToken is the value to send as the `X-Application-Token` header
+	AppToken string
 
 	// DeviceID is the value to send as the `X-Device-ID` header (optional)
 	DeviceID string

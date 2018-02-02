@@ -2,8 +2,7 @@ package errors
 
 // APIError is the error that is returned from API calls.
 type APIError struct {
-	// Id is the request ID for which this error occurred. This must be added
-	// manually
+	// Id is the request ID for which this error occurred.
 	ID string `json:"id,omitempty"`
 
 	// Status is the HTTP Status code for this error
