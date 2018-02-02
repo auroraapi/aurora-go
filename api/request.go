@@ -25,7 +25,7 @@ func getHeaders() (headers map[string]string) {
 	headers = make(map[string]string)
 	headers["X-Application-Id"] = config.C.ApplicationID
 	headers["X-Application-Token"] = config.C.ApplicationToken
-	headers["X-DeviceID"] = config.C.DeviceID
+	headers["X-Device-ID"] = config.C.DeviceID
 	return
 }
 
