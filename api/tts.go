@@ -1,11 +1,13 @@
 package api
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/nkansal96/aurora-go/audio"
 )
 
+// Based on an input test text, return an audio.File
 func GetTTS(string text) (*audio.File, error) {
 	// Create GET request
 	req, err := http.NewRequest("GET", baseURL+ttsEndpoint, &text)
@@ -27,4 +29,9 @@ func GetTTS(string text) (*audio.File, error) {
 
 	// Take data from server, put into audio.File
 	var tts audio.File
+	var audioReader io.Reader
+	audioReader.Read(resp.Body)
+	tts = audio.NewFromReader(audioReader)
+
+	return &tts, nil
 }
