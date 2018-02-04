@@ -1,13 +1,9 @@
 package api
 
 import (
-	"net/http"
 	"github.com/nkansal96/aurora-go/audio"
 )
 
-func GetTTS(string text) (*audio.File, error) {
+func GetTTS(text string) (*audio.File, error) {
 	return nil, nil
 }
-
-
-

@@ -9,10 +9,13 @@ import (
 	"github.com/nkansal96/aurora-go/audio"
 )
 
+// STTResponse is the response returned by the API if the speech was
+// successfully able to be transcribed
 type STTResponse struct {
 	Transcript string `json:"transcript"`
 }
 
+// GetSTT uses the API to convert an audio file to speech
 func GetSTT(audio *audio.File) (*STTResponse, error) {
 	// Pipe the output from the multipart writer so that we don't need to
 	// buffer the file in memory before sending it over the network
@@ -35,7 +38,7 @@ func GetSTT(audio *audio.File) (*STTResponse, error) {
 	}()
 
 	// create the request
-	req := http.NewRequest("GET", baseURL+sttEndpoint, r)
+	req, err := http.NewRequest("GET", baseURL+sttEndpoint, r)
 	if err != nil {
 		return nil, err // come back to this
 	}

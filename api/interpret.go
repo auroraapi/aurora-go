@@ -9,6 +9,6 @@ type InterpretResponse struct {
 	Entities map[string]string `json:"entities"`
 }
 
-func GetInterpret(string text) (*InterpretResponse, error) {
+func GetInterpret(text string) (*InterpretResponse, error) {
 	return nil, nil
 }
