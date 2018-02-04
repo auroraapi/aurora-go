@@ -26,6 +26,7 @@ func GetSTT(audio *audio.File) (*STTResponse, error) {
 
 	// don't block while copying data
 	go func() {
+		defer w.Close()
 		defer multi.Close()
 		part, err := multi.CreateFormFile("audio", "audio.wav")
 		if err != nil {
@@ -46,7 +47,7 @@ func GetSTT(audio *audio.File) (*STTResponse, error) {
 	client := getClient()
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, err // come back to this
 	}
 
 	defer resp.Body.Close()
