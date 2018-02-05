@@ -7,33 +7,42 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/nkansal96/aurora-go/errors"
 )
 
 const (
+	// the base URL for the backend (which is the actual service)
 	baseURL = "https://api.auroraapi.com"
 )
 
-// AuroraBackend is an implementation that actually executes requests with the
-// backend
+// AuroraBackend is an implementation that actually executes requests
+// with the API server
 type AuroraBackend struct {
-	client *http.Client
+	BaseURL string
+	client  *http.Client
 }
 
 // NewAuroraBackend returns an AuroraBackend
 func NewAuroraBackend() Backend {
 	return &AuroraBackend{
+		BaseURL: baseURL,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 	}
 }
 
+// NewAuroraBackendWithClient creates an AuroraBackend with the given client
+func NewAuroraBackendWithClient(baseURL string, client *http.Client) Backend {
+	return &AuroraBackend{BaseURL: baseURL, client: client}
+}
+
 // Call implements a call to the backend
 func (b *AuroraBackend) Call(params *CallParams) (*http.Response, error) {
-	params.Path = fmt.Sprintf("%s%s?%s", baseURL, params.Path, params.Query.Encode())
+	params.Path = fmt.Sprintf("%s%s?%s", b.BaseURL, params.Path, params.Query.Encode())
 	req, err := b.NewRequest(params)
 	if err != nil {
 		return nil, err
@@ -70,7 +79,7 @@ func (b *AuroraBackend) CallMultipart(params *CallParams) (*http.Response, error
 		}
 		// copy form data
 		if params.Form != nil {
-			for k, _ := range params.Form {
+			for k := range params.Form {
 				multi.WriteField(k, params.Form.Get(k))
 			}
 		}
@@ -78,7 +87,7 @@ func (b *AuroraBackend) CallMultipart(params *CallParams) (*http.Response, error
 
 	// create the request
 	params.Body = r
-	params.Path = fmt.Sprintf("%s%s?%s", baseURL, params.Path, params.Query.Encode())
+	params.Path = fmt.Sprintf("%s%s?%s", b.BaseURL, params.Path, params.Query.Encode())
 	req, err := b.NewRequest(params)
 	if err != nil {
 		return nil, err
@@ -100,11 +109,13 @@ func (b *AuroraBackend) NewRequest(params *CallParams) (*http.Request, error) {
 		headers = make(http.Header)
 	}
 
-	headers.Add("X-Application-ID", params.Credentials.AppID)
-	headers.Add("X-Application-Token", params.Credentials.AppToken)
-	headers.Add("X-Device-ID", params.Credentials.DeviceID)
-	req.Header = headers
+	if params.Credentials != nil {
+		headers.Add("X-Application-ID", params.Credentials.AppID)
+		headers.Add("X-Application-Token", params.Credentials.AppToken)
+		headers.Add("X-Device-ID", params.Credentials.DeviceID)
+	}
 
+	req.Header = headers
 	return req, nil
 }
 
@@ -125,7 +136,7 @@ func handleError(r *http.Response) error {
 		return nil
 	}
 
-	if r.Header.Get("Content-type") == "application/json" {
+	if strings.Contains(r.Header.Get("Content-Type"), "application/json") {
 		var err errors.APIError
 		json.NewDecoder(r.Body).Decode(&err)
 		return &err
