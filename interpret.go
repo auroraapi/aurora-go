@@ -5,7 +5,7 @@ import (
 )
 
 type Interpret struct {
-	Intent string 
+	Intent   string
 	Entities map[string]string
 }
 
@@ -13,5 +13,5 @@ func NewInterpret(res *api.InterpretResponse) *Interpret {
 	if res == nil {
 		return nil
 	}
-	return &Interpret { Intent: res.Intent, Entities: res.Entities}
+	return &Interpret{Intent: res.Intent, Entities: res.Entities}
 }
