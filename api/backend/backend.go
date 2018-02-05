@@ -48,8 +48,15 @@ type Credentials struct {
 
 // Backend is an interface for a general backend that executes a given request
 type Backend interface {
+	// Set some properties of the backend
+	SetBaseURL(url string)
+	SetClient(client *http.Client)
+
+	// Call the backend to perform a request
 	Call(params *CallParams) (*http.Response, error)
 	CallMultipart(params *CallParams) (*http.Response, error)
+
+	// Lower level methods that can be called as well
 	NewRequest(params *CallParams) (*http.Request, error)
 	Do(req *http.Request) (*http.Response, error)
 }
