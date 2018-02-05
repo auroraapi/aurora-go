@@ -11,6 +11,14 @@ Each release should have the following sections:
 - Fixed: issues that were fixed in this release
 - Security: specifically security issues that were fixed in this release
 
+## 0.0.2 (2017-02-09)
+### Added
+- implemented Interpret API (@thenathanyang)
+- implemented Aurora API (@helenhyewonlee)
+
+### Changed 
+- updated Errors packages to mount onto Error objects, not pointers to Error objects
+
 ## 0.0.1 (2017-02-02)
 
 ### Added
@@ -20,4 +28,3 @@ Each release should have the following sections:
 - standard `audio` package (@nkansal96, @akumar010)
 - helper methods to `api` package (@nkansal96)
 - added new API interfaces (@thenathanyang)
-- implemented Interpret API (@thenathanyang)
