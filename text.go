@@ -5,19 +5,19 @@ import (
 )
 
 type Text struct {
-	Text string 
+	Text string
 }
 
 func NewText(text string) *Text {
-	return &Text{ Text: text }
+	return &Text{Text: text}
 }
 
 func (t *Text) Speech() (*Speech, error) {
-	response, err := api.GetTTS(t.Text)
+	response, err := api.GetTTS(Config, t.Text)
 	return NewSpeech(response), err
 }
 
 func (t *Text) Interpret() (*Interpret, error) {
-	response, err := api.GetInterpret(t.Text)
+	response, err := api.GetInterpret(Config, t.Text)
 	return NewInterpret(response), err
-} 
+}

@@ -1,35 +1,29 @@
 package api
 
 import (
-	"fmt"
-	"net/http"
 	"net/url"
 
+	"github.com/nkansal96/aurora-go/api/backend"
 	"github.com/nkansal96/aurora-go/audio"
+	"github.com/nkansal96/aurora-go/config"
 )
 
-// Based on an input test text, return an audio.File
-func GetTTS(text string) (*audio.File, error) {
-	// Create GET request
-	urlE := url.QueryEscape(fmt.Sprintf("%s%s?text=%s", baseURL, ttsEndpoint, text))
-	req, err := http.NewRequest("GET", urlE, nil)
+// GetTTS calls the TTS API given some text and returns an *audio.File
+// with the audio from converting the text to speech
+func GetTTS(c *config.Config, text string) (*audio.File, error) {
+	params := &backend.CallParams{
+		Credentials: c.GetCredentials(),
+		Method:      "GET",
+		Path:        ttsEndpoint,
+		Query:       url.Values(map[string][]string{"text": []string{text}}),
+	}
+
+	res, err := c.Backend.Call(params)
 	if err != nil {
 		return nil, err
 	}
 
-	client := getClient()
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer resp.Body.Close()
-	err = handleError(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	tts := audio.NewFromReader(resp.Body)
-
+	defer res.Body.Close()
+	tts := audio.NewFromReader(res.Body)
 	return tts, nil
 }

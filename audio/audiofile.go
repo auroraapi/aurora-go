@@ -12,6 +12,11 @@ func NewFromBytes(b []byte) *File {
 	return nil
 }
 
+func NewFromRecording(length float64, silenceLen float64) *File {
+	// implement this
+	return nil
+}
+
 func NewFromReader(r io.Reader) *File {
 	// implement this
 	return nil

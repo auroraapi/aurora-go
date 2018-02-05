@@ -27,7 +27,7 @@ type InterpretResponse struct {
 // GetInterpret queries the API with the provided text and returns
 // the interpreted response
 func GetInterpret(c *config.Config, text string) (*InterpretResponse, error) {
-	params := &backend.Params{
+	params := &backend.CallParams{
 		Credentials: c.GetCredentials(),
 		Method:      "GET",
 		Path:        interpretEndpoint,

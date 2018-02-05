@@ -17,7 +17,7 @@ type STTResponse struct {
 // GetSTT queries the API with the provided audio file and returns
 // a transcript of the speech
 func GetSTT(c *config.Config, audio *audio.File) (*STTResponse, error) {
-	params := &backend.Params{
+	params := &backend.CallParams{
 		Credentials: c.GetCredentials(),
 		Method:      "POST",
 		Path:        sttEndpoint,
@@ -33,6 +33,6 @@ func GetSTT(c *config.Config, audio *audio.File) (*STTResponse, error) {
 
 	defer res.Body.Close()
 	var stt STTResponse
-	json.NewDecoder(resp.Body).Decode(&stt)
+	json.NewDecoder(res.Body).Decode(&stt)
 	return &stt, nil
 }
