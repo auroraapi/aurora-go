@@ -16,6 +16,11 @@ Each release should have the following sections:
 - implemented Interpret API (@thenathanyang)
 - implemented Aurora API (@helenhyewonlee)
 - TTS functionality created (@rainfur) 
+- Backend interface added (@nkansal96)
+- Added backend config for config module (@nkansal96)
+
+### Changed
+- Changed all API endpoints to use backend (@nkansal96)
 
 ### Changed 
 - updated Errors packages to mount onto Error objects, not pointers to Error objects

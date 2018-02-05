@@ -1,10 +1,11 @@
 package api
 
 import (
-	"net/http"
-	"net/url"
-	"fmt"
 	"encoding/json"
+	"net/url"
+
+	"github.com/nkansal96/aurora-go/api/backend"
+	"github.com/nkansal96/aurora-go/config"
 )
 
 // InterpretResponse is the response returned by the API if the text was
@@ -25,32 +26,21 @@ type InterpretResponse struct {
 
 // GetInterpret queries the API with the provided text and returns
 // the interpreted response
-func GetInterpret(text string) (*InterpretResponse, error) {
-	queryStr := url.QueryEscape(text)
-	queryUrl := fmt.Sprintf("%s%s?text=%s", baseURL, interpretEndpoint, queryStr)
-
-	req, err := http.NewRequest("GET", queryUrl, nil)
-	if err != nil {
-		return nil, err // come back to this 
+func GetInterpret(c *config.Config, text string) (*InterpretResponse, error) {
+	params := &backend.Params{
+		Credentials: c.GetCredentials(),
+		Method:      "GET",
+		Path:        interpretEndpoint,
+		Query:       url.Values(map[string][]string{"text": []string{text}}),
 	}
 
-	req.Header = *getHeaders()
-
-	client := getClient()
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err // come back to this 
-	}
-
-	err = handleError(res)
+	res, err := c.Backend.Call(params)
 	if err != nil {
 		return nil, err
 	}
 
-	resStruct := new(InterpretResponse)
-	if err := json.NewDecoder(res.Body).Decode(resStruct); err != nil {
-		return nil, err
-	}
-
-	return resStruct, nil
+	defer res.Body.Close()
+	var i InterpretResponse
+	err = json.NewDecoder(res.Body).Decode(&i)
+	return &i, err
 }
