@@ -12,7 +12,14 @@ Each release should have the following sections:
 - Security: specifically security issues that were fixed in this release
 
 ## 0.0.2 (2017-02-04)
+
+### Added
 - TTS functionality created (@rainfur) 
+- Backend interface added (@nkansal96)
+- Added backend config for config module (@nkansal96)
+
+### Changed
+- Changed all API endpoints to use backend (@nkansal96)
 
 ## 0.0.1 (2017-02-02)
 
