@@ -13,6 +13,6 @@ type Error struct {
 	Info string `json:"-"`
 }
 
-func (e *Error) Error() string {
+func (e Error) Error() string {
 	return e.Message
 }
