@@ -21,12 +21,12 @@ const (
 
 // getHeaders creates and returns a map with base headers required for
 // all requests
-func getHeaders() (*http.Header) {
-	headers = make(http.Header)
+func getHeaders() *http.Header {
+	headers := make(http.Header)
 	headers.Add("X-Application-Id", config.C.AppID)
 	headers.Add("X-Application-Token", config.C.AppToken)
 	headers.Add("X-Device-ID", config.C.DeviceID)
-	return
+	return &headers
 }
 
 // getClient creates, configures, and returns a secure https client that
