@@ -20,3 +20,4 @@ Each release should have the following sections:
 - standard `audio` package (@nkansal96, @akumar010)
 - helper methods to `api` package (@nkansal96)
 - added new API interfaces (@thenathanyang)
+- implemented Interpret API (@thenathanyang)
