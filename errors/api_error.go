@@ -21,6 +21,6 @@ type APIError struct {
 	Info string `json:"-"`
 }
 
-func (e *APIError) Error() string {
+func (e APIError) Error() string {
 	return e.Message
 }
