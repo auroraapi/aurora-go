@@ -12,7 +12,7 @@ func NewFromBytes(b []byte) *File {
 	return nil
 }
 
-func NewFromReader(r *io.Reader) *File {
+func NewFromReader(r io.Reader) *File {
 	// implement this
 	return nil
 }

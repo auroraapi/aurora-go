@@ -29,9 +29,7 @@ func GetTTS(text string) (*audio.File, error) {
 		return nil, err
 	}
 
-	// Take data from server, put into audio.File
-	var tts audio.File
-	tts = audio.NewFromReader(resp.Body)
+	tts := audio.NewFromReader(resp.Body)
 
-	return &tts, nil
+	return tts, nil
 }
