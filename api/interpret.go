@@ -26,20 +26,18 @@ type InterpretResponse struct {
 // GetInterpret queries the API with the provided text and returns
 // the interpreted response
 func GetInterpret(text string) (*InterpretResponse, error) {
-	interpretUrl := baseURL + interpretEndpoint
 	queryStr := url.QueryEscape(text)
-	queryUrl := fmt.Sprintf("%s?text=%s", interpretUrl, queryStr)
+	queryUrl := fmt.Sprintf("%s%s?text=%s", baseURL, interpretEndpoint, queryStr)
 
-	client := getClient()	// := ?
 	req, err := http.NewRequest("GET", queryUrl, nil)
-
 	if err != nil {
 		return nil, err // come back to this 
 	}
 
 	req.Header = *getHeaders()
-	res, err := client.Do(req)
 
+	client := getClient()
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err // come back to this 
 	}
