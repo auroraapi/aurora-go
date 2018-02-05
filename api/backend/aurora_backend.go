@@ -40,6 +40,16 @@ func NewAuroraBackendWithClient(baseURL string, client *http.Client) Backend {
 	return &AuroraBackend{BaseURL: baseURL, client: client}
 }
 
+// SetClient sets the http client for the backend
+func (b *AuroraBackend) SetClient(client *http.Client) {
+	b.client = client
+}
+
+// SetBaseURL sets the base URL for the backend
+func (b *AuroraBackend) SetBaseURL(url string) {
+	b.BaseURL = url
+}
+
 // Call implements a call to the backend
 func (b *AuroraBackend) Call(params *CallParams) (*http.Response, error) {
 	params.Path = fmt.Sprintf("%s%s?%s", b.BaseURL, params.Path, params.Query.Encode())
