@@ -15,12 +15,13 @@ Each release should have the following sections:
 ### Added
 - implemented Interpret API (@thenathanyang)
 - implemented Aurora API (@helenhyewonlee)
+- TTS functionality created (@rainfur) 
 
 ### Changed 
 - updated Errors packages to mount onto Error objects, not pointers to Error objects
 
-## 0.0.1 (2017-02-02)
 
+## 0.0.1 (2017-02-02)
 ### Added
 - basic repo layout created
 - standard `errors` package (@nkansal96)
