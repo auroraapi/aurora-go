@@ -1,16 +1,18 @@
 package api
 
 import (
-	"io"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/nkansal96/aurora-go/audio"
 )
 
 // Based on an input test text, return an audio.File
-func GetTTS(string text) (*audio.File, error) {
+func GetTTS(text string) (*audio.File, error) {
 	// Create GET request
-	req, err := http.NewRequest("GET", baseURL+ttsEndpoint, &text)
+	urlE := url.QueryEscape(fmt.Sprintf("%s%s?text=%s", baseURL, ttsEndpoint, text))
+	req, err := http.NewRequest("GET", urlE, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -29,9 +31,7 @@ func GetTTS(string text) (*audio.File, error) {
 
 	// Take data from server, put into audio.File
 	var tts audio.File
-	var audioReader io.Reader
-	audioReader.Read(resp.Body)
-	tts = audio.NewFromReader(audioReader)
+	tts = audio.NewFromReader(resp.Body)
 
 	return &tts, nil
 }
