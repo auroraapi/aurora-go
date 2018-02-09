@@ -85,16 +85,15 @@ func (b *AuroraBackend) CallMultipart(params *CallParams) (*http.Response, error
 		}
 	}()
 
-	// create the request
-	params.Body = r
-	params.Path = fmt.Sprintf("%s%s?%s", b.BaseURL, params.Path, params.Query.Encode())
-	req, err := b.NewRequest(params)
-	if err != nil {
-		return nil, err
+	// set some parameters
+	if params.Headers == nil {
+		params.Headers = make(http.Header)
 	}
+	params.Headers.Add("Content-type", multi.FormDataContentType())
+	params.Body = r
 
-	req.Header.Add("Content-type", multi.FormDataContentType())
-	return b.Do(req)
+	// execute the rest of the call normally
+	return b.Call(params)
 }
 
 // NewRequest creates an http.Request from the given parameters

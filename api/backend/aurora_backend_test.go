@@ -131,3 +131,5 @@ func TestCallPathAndQuery(t *testing.T) {
 	require.Equal(t, "/v1/stt/", r.Request.URL.Path)
 	require.Equal(t, "t1=v1&t2=v2&t3=v3&t3=v33&t4=", r.Request.URL.RawQuery)
 }
+
+// TODO: implement CallMultipart tests!
