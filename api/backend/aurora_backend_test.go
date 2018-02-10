@@ -132,4 +132,25 @@ func TestCallPathAndQuery(t *testing.T) {
 	require.Equal(t, "t1=v1&t2=v2&t3=v3&t3=v33&t4=", r.Request.URL.RawQuery)
 }
 
+func TestGetInterpret(t *testing.T) {
+	s := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(""))
+	}))
+	defer s.Close()
+
+	b := backend.NewAuroraBackendWithClient(s.URL, s.Client())
+	r, err := b.Call(&backend.CallParams{
+		Path: "/v1/stt/",
+		Query: url.Values(map[string][]string{
+			"t1": []string{"v1"},
+			"t2": []string{"v2"},
+			"t3": []string{"v3", "v33"},
+			"t4": []string{""},
+		}),
+	})
+	require.Nil(t, err)
+	require.Equal(t, "/v1/stt/", r.Request.URL.Path)
+	require.Equal(t, "t1=v1&t2=v2&t3=v3&t3=v33&t4=", r.Request.URL.RawQuery)
+}
+
 // TODO: implement CallMultipart tests!
