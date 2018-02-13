@@ -1,12 +1,77 @@
 package audio
 
 import (
+	"io/ioutil"
 	"github.com/nkansal96/aurora-go/errors"
 )
 
 type WAV struct {
-	RiffHeader *riffHeader
+	NumChannels uint16
+	SampleRate uint32
+	AudioFormat uint16
+	BitsPerSample uint16
+
+	audioData []byte
 }
+
+type WAVParams struct {
+	NumChannels uint16
+	SampleRate uint32
+	BitsPerSample uint16
+	AudioData []byte
+}
+
+func NewWAV() (*WAV, error) {
+	// create a new default WAV
+	// NumChannels = 1
+	// BitsPerSample = 16
+	// SampleRate = 16000
+}
+
+func NewWAVFromParams(params *WAVParams) (*WAV, error) {
+	// create a WAV from the given params
+	// use defaults from previous function if any value is 0
+	// return error if params are invalid
+}
+
+func NewWAVFromData(data []byte) (*WAV, error) {
+	// create a WAV from the given buffer.
+	// return error if len(data) < 44
+	// extract data from the data according to the spec: http://soundfile.sapp.org/doc/WaveFormat/
+	// return error if unexpected data
+}
+
+func NewWAVFromReader(reader io.Reader) (*WAV, error) {
+	b, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	return NewWAVFromData(b)
+}
+
+func (w *WAV) TrimSilent(threshold float64, padding float64) {
+	// trim silence from the ends of the file, leaving a certain amount of padding
+}
+
+func (w *WAV) AddAudioData(d []byte) {
+	// add audio data to existing data
+}
+
+func (w *WAV) Data() []byte {
+	// create header + data (like the function I sent you) based on
+	// params stored in w and properties of the data
+	// http://soundfile.sapp.org/doc/WaveFormat/
+	// remember to set all calculated fields
+}
+
+
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+//                                                                 //
+//         repurpose the following code into above                 //
+//                                                                 //
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
 
 type riffHeader struct {
 	ChunkID   [4]byte
