@@ -1,7 +1,8 @@
 package audio
 
 import (
-	"bytes"
+	"io"
+	"io/ioutil"
 	"encoding/binary"
 	"github.com/nkansal96/aurora-go/errors"
 )
@@ -44,28 +45,51 @@ func NewWAVFromParams(params *WAVParams) (*WAV, error) {
 	if params == nil {
 		return NewWAV()
 	}
-	if params.NumChannels == nil || params.NumChannels == 0 {
+	if params.NumChannels == 0 {
 		params.NumChannels = DefaultNumChannels
 	}
-	if params.SampleRate == nil || params.SampleRate == 0 {
-		params.SampleRate = SampleRate
+	if params.SampleRate == 0 {
+		params.SampleRate = DefaultSampleRate
 	}
-	if params.BitsPerSample == nil || params.BitsPerSample == 0 {
+	if params.BitsPerSample == 0 {
 		params.BitsPerSample = DefaultBitsPerSample
 	}
-	if params.AudioData == nil {
+	if binary.Size(params.AudioData) == 0 {
 		params.AudioData = make([]byte, 0)
 	}
 	return &WAV{ NumChannels: params.NumChannels, SampleRate: params.SampleRate, AudioFormat: DefaultAudioFormat, BitsPerSample: params.BitsPerSample, audioData: params.AudioData}, nil
 
 }
 
+// TODO: error checks for this
 func NewWAVFromData(data []byte) (*WAV, error) {
 	// create a WAV from the given buffer.
 	// return error if len(data) < 44
 	// extract data from the data according to the spec: http://soundfile.sapp.org/doc/WaveFormat/
 	// return error if unexpected data
 
+	// find first data index
+	i := 4
+	for i < len(data) && data[i-4] != 'd' || data[i-3] != 'a' || data[i-2] != 't' || data[i-1] != 'a' {
+		i++
+	}
+
+	// ask about this versus the 44 header length
+	dataLen := len(data) - i
+	if dataLen <= 0 {
+		return nil, errors.Error{
+			Code:    "One",
+			Message: "Received bytes with fewer bytes than the header length",
+			Info:    "Critical error",
+		}
+	}
+
+	numChannels := binary.LittleEndian.Uint16(data[22:23])
+	sampleRate := binary.LittleEndian.Uint32(data[24:27])
+	bitsPerSample := binary.LittleEndian.Uint16(data[34:35])
+	audioData := data[i:]
+
+	return &WAV{ NumChannels: numChannels, SampleRate: sampleRate, AudioFormat: DefaultAudioFormat, BitsPerSample: bitsPerSample, audioData: audioData}, nil
 }
 
 func NewWAVFromReader(reader io.Reader) (*WAV, error) {
@@ -84,20 +108,19 @@ func (w *WAV) AddAudioData(d []byte) {
 	// add audio data to existing data
 }
 
-func (w *WAV) Data() []byte {
+func (w *WAV) Data() ([]byte, error) {
 	// create header + data (like the function I sent you) based on
 	// params stored in w and properties of the data
 	// http://soundfile.sapp.org/doc/WaveFormat/
 	// remember to set all calculated fields
 	// find first data index
-	i := 4
-	for i < len(b) && b[i-4] != 'd' || b[i-3] != 'a' || b[i-2] != 't' || b[i-1] != 'a' {
-		i++
-	}
-
-	dataLen := len(b) - i
+	dataLen := binary.Size(w.audioData)
 	if dataLen <= 0 {
-		return nil, errors.FromErrorCodeWithInfo(errors.TTSResponseInvalidAudioData, fmt.Sprintf("Received bytes with length %d and header length of %d", len(b), i))
+		return nil, errors.Error{
+			Code:    "One",
+			Message: "Received bytes with fewer bytes than the header length",
+			Info:    "Critical error",
+		}
 	}
 
 	headerLen := 44
@@ -111,7 +134,7 @@ func (w *WAV) Data() []byte {
 	wav[2] = 'F'
 	wav[3] = 'F'
 	// chunk size
-	binary.LittleEndian.PutUint32(wav[4:7], chunkSize)
+	binary.LittleEndian.PutUint32(wav[4:7], uint32(chunkSize))
 
 	// Format (WAVE)
 	wav[8] = 'W'
@@ -132,7 +155,7 @@ func (w *WAV) Data() []byte {
 	// Sample Rate (16000 Hz)
 	binary.LittleEndian.PutUint32(wav[24:27], w.SampleRate) // SAMPLE RATE
 	// Byte Rate = SampleRate * NumChannels * BitsPerSample/8 = 32000
-	byteRate := w.SampleRate * w.NumChannels * w.BitsPerSample / 8
+	byteRate := uint32(w.SampleRate) * uint32(w.NumChannels) * uint32(w.BitsPerSample) / 8
 	binary.LittleEndian.PutUint32(wav[28:31], byteRate)
 	// Block Align = NumChannels * BitsPerSample/8
 	blockAlign := w.NumChannels * w.BitsPerSample / 8
@@ -145,7 +168,8 @@ func (w *WAV) Data() []byte {
 	wav[38] = 't'
 	wav[39] = 'a'
 	// Data length
-	binary.LittleEndian.PutUint32(wav[40:43], dataLen)
+	binary.LittleEndian.PutUint32(wav[40:43], uint32(dataLen))
 
-	return append(wav, b[i:]...), nil
+
+	return append(wav, w.audioData[0:]...), nil
 }
