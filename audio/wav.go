@@ -2,6 +2,7 @@ package audio
 
 import (
 	"io"
+	"math"
 	"io/ioutil"
 	"encoding/binary"
 	"github.com/nkansal96/aurora-go/errors"
@@ -54,7 +55,7 @@ func NewWAVFromParams(params *WAVParams) (*WAV, error) {
 	if params.BitsPerSample == 0 {
 		params.BitsPerSample = DefaultBitsPerSample
 	}
-	if binary.Size(params.AudioData) == 0 {
+	if len(params.AudioData) == 0 {
 		params.AudioData = make([]byte, 0)
 	}
 	return &WAV{ NumChannels: params.NumChannels, SampleRate: params.SampleRate, AudioFormat: DefaultAudioFormat, BitsPerSample: params.BitsPerSample, audioData: params.AudioData}, nil
@@ -74,7 +75,6 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 		i++
 	}
 
-	// ask about this versus the 44 header length
 	dataLen := len(data) - i
 	if dataLen <= 0 {
 		return nil, errors.Error{
@@ -84,9 +84,11 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 		}
 	}
 
-	numChannels := binary.LittleEndian.Uint16(data[22:23])
-	sampleRate := binary.LittleEndian.Uint32(data[24:27])
-	bitsPerSample := binary.LittleEndian.Uint16(data[34:35])
+	headerOffset := i - 44 
+
+	numChannels := binary.LittleEndian.Uint16(data[headerOffset+22:headerOffset+23])
+	sampleRate := binary.LittleEndian.Uint32(data[headerOffset+24:headerOffset+27])
+	bitsPerSample := binary.LittleEndian.Uint16(data[headerOffset+34:headerOffset+35])
 	audioData := data[i:]
 
 	return &WAV{ NumChannels: numChannels, SampleRate: sampleRate, AudioFormat: DefaultAudioFormat, BitsPerSample: bitsPerSample, audioData: audioData}, nil
@@ -100,13 +102,74 @@ func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 	return NewWAVFromData(b)
 }
 
-func (w *WAV) TrimSilent(threshold float64, padding float64) {
+func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 	// trim silence from the ends of the file, leaving a certain amount of padding
+	sizeOfSample := uint16(w.BitsPerSample / 8)
+	numSamples := uint16(len(w.audioData)) * 8 / uint16(w.BitsPerSample)
+
+	// get max decibels
+	max_DB := uint16(math.Inf(-1))
+	i := uint16(0)
+	for i < uint16(len(w.audioData)){
+		sampleValue := binary.LittleEndian.Uint16(w.audioData[i:i+sizeOfSample-1])
+		if sampleValue > max_DB {
+			max_DB = sampleValue
+		}
+		i += sizeOfSample 
+	}
+	var silence_thresh float64 = float64(threshold) * float64(max_DB)
+
+	// Trimming the beginning
+	sum_squares := float64(0) 
+	N1 := uint16(0)
+	for N1 < uint16(len(w.audioData)) {
+		sampleValue := binary.LittleEndian.Uint16(w.audioData[N1:N1+sizeOfSample-1])
+		sum_squares += math.Pow(float64(2), float64(sampleValue))
+		rms := math.Sqrt(sum_squares / float64(numSamples))
+
+		N1 += sizeOfSample 
+		if rms > silence_thresh {
+			break
+		}
+	}
+	
+	// Trimming the end
+	sum_squares = float64(0)
+	N2 := uint16(len(w.audioData))
+	for N2 - uint16(sizeOfSample) >= 0 {
+		sampleValue := binary.LittleEndian.Uint16(w.audioData[N2-sizeOfSample:N2-1])
+		sum_squares += math.Pow(float64(2), float64(sampleValue))
+		rms := math.Sqrt(sum_squares / float64(numSamples))
+
+		N2 -= sizeOfSample
+		if rms > silence_thresh {
+			break
+		}
+	}
+	w.audioData = w.audioData[N1:N2-1]
+	return w
 }
 
-func (w *WAV) AddAudioData(d []byte) {
+
+func (w *WAV) AddAudioData(d []byte) (*WAV, error) {
 	// add audio data to existing data
+	if d == nil {
+		return nil, errors.Error {
+			Code:    "One",
+			Message: "The received audio data was nil",
+			Info:    "Critical error",
+		}
+	}
+	w.audioData = d 
+	return w, nil
 }
+
+// (*WAV, error) {
+// 	b, err := ioutil.ReadAll(reader)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return NewWAVFromData(b)
 
 func (w *WAV) Data() ([]byte, error) {
 	// create header + data (like the function I sent you) based on
@@ -114,7 +177,7 @@ func (w *WAV) Data() ([]byte, error) {
 	// http://soundfile.sapp.org/doc/WaveFormat/
 	// remember to set all calculated fields
 	// find first data index
-	dataLen := binary.Size(w.audioData)
+	dataLen := len(w.audioData)
 	if dataLen <= 0 {
 		return nil, errors.Error{
 			Code:    "One",
@@ -147,15 +210,36 @@ func (w *WAV) Data() ([]byte, error) {
 	wav[14] = 't'
 	wav[15] = ' '
 	// Metadata subchunk size (16)
-	wav[16] = 16 
+	binary.LittleEndian.PutUint32(wav[16:19], 16)
 	// Audio format (PCM = 1)
+	if w.AudioFormat != 1 {
+		return nil, errors.Error{
+			Code:    "One",
+			Message: "Audio Format must have the value 1",
+			Info:    "Critical error",
+		}
+	}
 	binary.LittleEndian.PutUint16(wav[20:21], w.AudioFormat) // AUDIO FORMAT
 	// Num Channels (Mono = 1)
+	if w.NumChannels > 65535 || w.NumChannels <= 0 {
+		return nil, errors.Error{
+			Code:    "One",
+			Message: "The number of channels must be less than or equal to 65535 but greater than 0",
+			Info:    "Critical error",
+		}
+	}
 	binary.LittleEndian.PutUint16(wav[22:23], w.NumChannels) // NUM CHANNELS
 	// Sample Rate (16000 Hz)
+	if w.SampleRate <= 0 {
+		return nil, errors.Error{
+			Code:    "One",
+			Message: "The sample rate must be greater than 0",
+			Info:    "Critical error",
+		}
+	}
 	binary.LittleEndian.PutUint32(wav[24:27], w.SampleRate) // SAMPLE RATE
 	// Byte Rate = SampleRate * NumChannels * BitsPerSample/8 = 32000
-	byteRate := uint32(w.SampleRate) * uint32(w.NumChannels) * uint32(w.BitsPerSample) / 8
+	byteRate := w.SampleRate * uint32(w.NumChannels) * uint32(w.BitsPerSample) / 8
 	binary.LittleEndian.PutUint32(wav[28:31], byteRate)
 	// Block Align = NumChannels * BitsPerSample/8
 	blockAlign := w.NumChannels * w.BitsPerSample / 8
@@ -169,7 +253,6 @@ func (w *WAV) Data() ([]byte, error) {
 	wav[39] = 'a'
 	// Data length
 	binary.LittleEndian.PutUint32(wav[40:43], uint32(dataLen))
-
 
 	return append(wav, w.audioData[0:]...), nil
 }
