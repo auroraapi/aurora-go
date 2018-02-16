@@ -140,10 +140,12 @@ func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 	return NewWAVFromData(b)
 }
 
-func getRMS(rmsSampleCount uint16, begin uint16, end uint16, audioData []byte) float64 {
-	sampleValue := binary.LittleEndian.Uint16(audioData[begin:end])
+func getRMS(sizeOfSample uint16, audioData []byte) float64 {
+	// What happens if audioData is larger than Uint16? 
+	sampleValue := binary.LittleEndian.Uint16(audioData)
 	sumSquares := math.Pow(float64(2), float64(sampleValue))
-	rms := math.Sqrt(sumSquares / float64(rmsSampleCount))
+	numOfSamples := float64(len(audioData)) / float64(sizeOfSample)
+	rms := math.Sqrt(sumSquares / numOfSamples)
 	return rms
 }
 
@@ -152,13 +154,13 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 	// trim silence from the ends of the file, leaving a certain amount of padding
 	// numSamples := uint16(len(w.audioData)) * 8 / uint16(w.BitsPerSample)
 	sizeOfSample := uint16(w.BitsPerSample / 8)
-	rmsSampleCount := uint16(1 / 16 * w.SampleRate)
+	rmsSampleCount := uint16(float64(1.0 / 16.0) * float64(w.SampleRate))
 
 	// get max amplitude
-	max_possible_amp := uint16(math.Exp2(float64(w.BitsPerSample)))
-	max_possible_val := max_possible_amp / 2
+	maxPossibleAmp := uint16(math.Exp2(float64(w.BitsPerSample)))
+	maxPossibleVal := maxPossibleAmp / 2
 
-	var silence_thresh float64 = float64(threshold) * float64(max_possible_val)
+	var silenceThresh float64 = float64(threshold) * float64(maxPossibleVal)
 
 	// Trimming the beginning
 	N1 := uint16(0)
@@ -167,10 +169,10 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 		// sampleValue := binary.LittleEndian.Uint16(w.audioData[N1:N1+sizeOfSample-1])
 		// sumSquares += math.Pow(float64(2), float64(sampleValue))
 		// rms := math.Sqrt(sumSquares / float64(numSamples))
-		rms := getRMS(rmsSampleCount, N1, N1+sizeOfSample*rmsSampleCount-1, w.audioData)
+		rms := getRMS(sizeOfSample, w.audioData[N1:N1+sizeOfSample*rmsSampleCount-1])
 
 		N1 += sizeOfSample * rmsSampleCount
-		if rms > silence_thresh {
+		if rms > silenceThresh {
 			break
 		}
 	}
@@ -181,15 +183,15 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 		// sampleValue := binary.LittleEndian.Uint16(w.audioData[N2-sizeOfSample:N2-1])
 		// sumSquares += math.Pow(float64(2), float64(sampleValue))
 		// rms := math.Sqrt(sumSquares / float64(numSamples))
-		rms := getRMS(rmsSampleCount, N2-sizeOfSample*rmsSampleCount, N2-1, w.audioData)
+		rms := getRMS(sizeOfSample, w.audioData[N2-sizeOfSample*rmsSampleCount:N2-1])
 
 		N2 -= sizeOfSample * rmsSampleCount
-		if rms > silence_thresh {
+		if rms > silenceThresh {
 			break
 		}
 	}
-	padding_samples := uint16((uint32(padding) * w.SampleRate)) * sizeOfSample
-	w.audioData = w.audioData[N1-padding_samples : N2+padding_samples-1]
+	paddingSamples := uint16((uint32(padding) * w.SampleRate)) * sizeOfSample
+	w.audioData = w.audioData[N1-paddingSamples : N2+paddingSamples-1]
 	return w
 }
 
