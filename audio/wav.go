@@ -1,45 +1,71 @@
 package audio
 
 import (
-	"io"
-	"math"
-	"io/ioutil"
 	"encoding/binary"
+	"io"
+	"io/ioutil"
+	"math"
+
 	"github.com/nkansal96/aurora-go/errors"
 )
 
-type WAV struct {
-	NumChannels uint16
-	SampleRate uint32
-	AudioFormat uint16
-	BitsPerSample uint16
-
-	audioData []byte
-}
-
-type WAVParams struct {
-	NumChannels uint16
-	SampleRate uint32
-	BitsPerSample uint16
-	AudioData []byte
-}
-
+// WAV-related constants.
 const (
-	DefaultNumChannels   = 1
-	DefaultSampleRate    = 16000
-	DefaultAudioFormat   = 1
+	// DefaultNumChannels is 1 (mono audio)
+	DefaultNumChannels = 1
+	DefaultSampleRate  = 16000
+	// DefaultAudioFormat is 1 (raw, uncompressed PCM waveforms)
+	DefaultAudioFormat = 1
+	// DefaultBitsPerSample is 16 (2 bytes per sample).
 	DefaultBitsPerSample = 16
 )
 
-// What kind of errors would be possible here?
-func NewWAV() (*WAV, error) {
-	// create a new default WAV
-	b := make([]byte, 0)
-	return &WAV{ NumChannels: DefaultNumChannels, SampleRate: DefaultSampleRate, AudioFormat: DefaultAudioFormat, BitsPerSample: DefaultBitsPerSample, audioData: b}, nil
+// WAV represents a PCM audio file in the WAV container format. It keeps
+// a high-level description of the parameters of the file, along with the
+// raw audio bytes, until it needs to be written to a file, stream, or array.
+type WAV struct {
+	// NumChannels is the number of channels the WAV file has. 1 = mono,
+	// 2 = stereo, etc. This affects the block align and also number of
+	// bytes per sample: (BitsPerSample / 8) * NumChannels.
+	NumChannels uint16
+	// SampleRate is the number of samples taken per second.
+	SampleRate uint32
+	// AudioFormat is the type of Audio that is encoded in the WAV file.
+	// In most scenarios, this will be 1 (1 = raw, uncompressed PCM audio),
+	// since WAV doesn't support compression.
+	AudioFormat uint16
+	// BitsPerSample is the width of each sample. 16 bits means each sample
+	// is two bytes.
+	BitsPerSample uint16
+
+	// audioData is the raw audio data stored in the WAV file.
+	audioData []byte
 }
 
-// What kind of errors would be possible here?
-func NewWAVFromParams(params *WAVParams) (*WAV, error) {
+// WAVParams are a set of parameters used to create a WAV file. Its fields
+// correspond directly to the WAV file.
+type WAVParams struct {
+	NumChannels   uint16
+	SampleRate    uint32
+	BitsPerSample uint16
+	AudioData     []byte
+}
+
+// NewWAV returns a new WAV file from the default parameters. It will never
+// return an error.
+func NewWAV() *WAV {
+	// create a new default WAV
+	return &WAV{
+		NumChannels:   DefaultNumChannels,
+		SampleRate:    DefaultSampleRate,
+		AudioFormat:   DefaultAudioFormat,
+		BitsPerSample: DefaultBitsPerSample,
+		audioData:     make([]byte, 0),
+	}
+}
+
+// NewWAVFromParams [... fill in documentation]
+func NewWAVFromParams(params *WAVParams) *WAV {
 	// create a WAV from the given params
 	// use defaults from previous function if any value is 0
 	// return error if params are invalid
@@ -55,19 +81,23 @@ func NewWAVFromParams(params *WAVParams) (*WAV, error) {
 	if params.BitsPerSample == 0 {
 		params.BitsPerSample = DefaultBitsPerSample
 	}
-	if len(params.AudioData) == 0 {
+	if params.AudioData == nil || len(params.AudioData) == 0 {
 		params.AudioData = make([]byte, 0)
 	}
-	return &WAV{ NumChannels: params.NumChannels, SampleRate: params.SampleRate, AudioFormat: DefaultAudioFormat, BitsPerSample: params.BitsPerSample, audioData: params.AudioData}, nil
-
+	return &WAV{
+		NumChannels:   params.NumChannels,
+		SampleRate:    params.SampleRate,
+		AudioFormat:   DefaultAudioFormat,
+		BitsPerSample: params.BitsPerSample,
+		audioData:     params.AudioData,
+	}
 }
 
-// TODO: error checks for this
+// NewWAVFromData [... fill in documentation]
 func NewWAVFromData(data []byte) (*WAV, error) {
 	// create a WAV from the given buffer.
 	// return error if len(data) < 44
 	// extract data from the data according to the spec: http://soundfile.sapp.org/doc/WaveFormat/
-	// return error if unexpected data
 
 	// find first data index
 	i := 4
@@ -79,36 +109,29 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 	if dataLen <= 0 {
 		return nil, errors.Error{
 			Code:    "One",
-			Message: "Received bytes with fewer bytes than the header length",
-			Info:    "Critical error",
+			Message: "Received WAV file with empty data",
 		}
 	}
 
-	headerOffset := i - 44 
+	// hOff is the header offset. It denotes the start of the header, which is
+	// 44 bytes before the data starts.
+	hOff := i - 44
 
-	numChannels := binary.LittleEndian.Uint16(data[headerOffset+22:headerOffset+23])
-	if numChannels > 65535 {
-		return nil, errors.Error{
-			Code:    "One",
-			Message: "The number of channels must be less than or equal to 65535 but greater than 0",
-			Info:    "Critical error",
-		}
-	}
-	sampleRate := binary.LittleEndian.Uint32(data[headerOffset+24:headerOffset+27])
-	// Error check for sample rate?
-	bitsPerSample := binary.LittleEndian.Uint16(data[headerOffset+34:headerOffset+35])
-	if bitsPerSample % 8 != 0 {
-		return nil, errors.Error{
-			Code:    "One",
-			Message: "The bits per sample must be divisible by 8",
-			Info:    "Critical error",
-		}
-	}
+	numChannels := binary.LittleEndian.Uint16(data[hOff+22 : hOff+23])
+	sampleRate := binary.LittleEndian.Uint32(data[hOff+24 : hOff+27])
+	bitsPerSample := binary.LittleEndian.Uint16(data[hOff+34 : hOff+35])
 	audioData := data[i:]
 
-	return &WAV{ NumChannels: numChannels, SampleRate: sampleRate, AudioFormat: DefaultAudioFormat, BitsPerSample: bitsPerSample, audioData: audioData}, nil
+	return &WAV{
+		NumChannels:   numChannels,
+		SampleRate:    sampleRate,
+		AudioFormat:   DefaultAudioFormat,
+		BitsPerSample: bitsPerSample,
+		audioData:     audioData,
+	}, nil
 }
 
+// NewWAVFromReader [... fill in documentation]
 func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
@@ -117,22 +140,23 @@ func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 	return NewWAVFromData(b)
 }
 
-func getRMS(rmsSampleCount uint16, begin uint16, end uint16, audioData []byte) float64{
+func getRMS(rmsSampleCount uint16, begin uint16, end uint16, audioData []byte) float64 {
 	sampleValue := binary.LittleEndian.Uint16(audioData[begin:end])
 	sumSquares := math.Pow(float64(2), float64(sampleValue))
 	rms := math.Sqrt(sumSquares / float64(rmsSampleCount))
 	return rms
 }
 
+// TrimSilent [... fill in documentation]
 func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 	// trim silence from the ends of the file, leaving a certain amount of padding
 	// numSamples := uint16(len(w.audioData)) * 8 / uint16(w.BitsPerSample)
 	sizeOfSample := uint16(w.BitsPerSample / 8)
-	rmsSampleCount := uint16(1/16 * w.SampleRate)
+	rmsSampleCount := uint16(1 / 16 * w.SampleRate)
 
-	// get max amplitude 
+	// get max amplitude
 	max_possible_amp := uint16(math.Exp2(float64(w.BitsPerSample)))
-	max_possible_val := max_possible_amp / 2 
+	max_possible_val := max_possible_amp / 2
 
 	var silence_thresh float64 = float64(threshold) * float64(max_possible_val)
 
@@ -143,21 +167,21 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 		// sampleValue := binary.LittleEndian.Uint16(w.audioData[N1:N1+sizeOfSample-1])
 		// sumSquares += math.Pow(float64(2), float64(sampleValue))
 		// rms := math.Sqrt(sumSquares / float64(numSamples))
-		rms := getRMS(rmsSampleCount, N1, N1 + sizeOfSample * rmsSampleCount - 1, w.audioData)
+		rms := getRMS(rmsSampleCount, N1, N1+sizeOfSample*rmsSampleCount-1, w.audioData)
 
 		N1 += sizeOfSample * rmsSampleCount
 		if rms > silence_thresh {
 			break
 		}
 	}
-	
+
 	// Trimming the end
 	N2 := uint16(len(w.audioData))
-	for N2 - uint16(sizeOfSample) >= 0 {
+	for N2-uint16(sizeOfSample) >= 0 {
 		// sampleValue := binary.LittleEndian.Uint16(w.audioData[N2-sizeOfSample:N2-1])
 		// sumSquares += math.Pow(float64(2), float64(sampleValue))
 		// rms := math.Sqrt(sumSquares / float64(numSamples))
-		rms := getRMS(rmsSampleCount, N2 - sizeOfSample * rmsSampleCount, N2 - 1, w.audioData)
+		rms := getRMS(rmsSampleCount, N2-sizeOfSample*rmsSampleCount, N2-1, w.audioData)
 
 		N2 -= sizeOfSample * rmsSampleCount
 		if rms > silence_thresh {
@@ -165,24 +189,19 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 		}
 	}
 	padding_samples := uint16((uint32(padding) * w.SampleRate)) * sizeOfSample
-	w.audioData = w.audioData[N1-padding_samples:N2+padding_samples-1]
+	w.audioData = w.audioData[N1-padding_samples : N2+padding_samples-1]
 	return w
 }
 
-
-func (w *WAV) AddAudioData(d []byte) (*WAV, error) {
+// AddAudioData [... fill in documentation]
+func (w *WAV) AddAudioData(d []byte) {
 	// add audio data to existing data
-	if d == nil {
-		return nil, errors.Error {
-			Code:    "One",
-			Message: "The received audio data was nil",
-			Info:    "Critical error",
-		}
+	if d != nil && len(d) > 0 {
+		w.audioData = append(w.audioData, d...)
 	}
-	w.audioData = append(w.audioData, d...)
-	return w, nil
 }
 
+// Data [... fill in documentation]
 func (w *WAV) Data() ([]byte, error) {
 	// create header + data (like the function I sent you) based on
 	// params stored in w and properties of the data
@@ -190,24 +209,18 @@ func (w *WAV) Data() ([]byte, error) {
 	// remember to set all calculated fields
 	// find first data index
 	dataLen := len(w.audioData)
-	if dataLen <= 0 {
-		return nil, errors.Error{
-			Code:    "One",
-			Message: "Received bytes with fewer bytes than the header length",
-			Info:    "Critical error",
-		}
-	}
-
 	headerLen := 44
 	chunkSize := (dataLen + headerLen - 8)
 
 	// first create the header, then append the rest of the file
 	wav := make([]byte, headerLen)
+
 	// RIFF header
 	wav[0] = 'R'
 	wav[1] = 'I'
 	wav[2] = 'F'
 	wav[3] = 'F'
+
 	// chunk size
 	binary.LittleEndian.PutUint32(wav[4:7], uint32(chunkSize))
 
@@ -221,27 +234,33 @@ func (w *WAV) Data() ([]byte, error) {
 	wav[13] = 'm'
 	wav[14] = 't'
 	wav[15] = ' '
+
 	// Metadata subchunk size (16)
 	binary.LittleEndian.PutUint32(wav[16:19], 16)
 	// Audio format (PCM = 1)
-	binary.LittleEndian.PutUint16(wav[20:21], w.AudioFormat) // AUDIO FORMAT
+	binary.LittleEndian.PutUint16(wav[20:21], w.AudioFormat)
 	// Num Channels (Mono = 1)
-	binary.LittleEndian.PutUint16(wav[22:23], w.NumChannels) // NUM CHANNELS
+	binary.LittleEndian.PutUint16(wav[22:23], w.NumChannels)
 	// Sample Rate (16000 Hz)
-	binary.LittleEndian.PutUint32(wav[24:27], w.SampleRate) // SAMPLE RATE
+	binary.LittleEndian.PutUint32(wav[24:27], w.SampleRate)
+
 	// Byte Rate = SampleRate * NumChannels * BitsPerSample/8 = 32000
 	byteRate := w.SampleRate * uint32(w.NumChannels) * uint32(w.BitsPerSample) / 8
 	binary.LittleEndian.PutUint32(wav[28:31], byteRate)
+
 	// Block Align = NumChannels * BitsPerSample/8
 	blockAlign := w.NumChannels * w.BitsPerSample / 8
 	binary.LittleEndian.PutUint16(wav[32:33], blockAlign)
+
 	// Bits per sample = 16
 	binary.LittleEndian.PutUint16(wav[34:35], w.BitsPerSample)
+
 	// Data subchunk ID ("data")
 	wav[36] = 'd'
 	wav[37] = 'a'
 	wav[38] = 't'
 	wav[39] = 'a'
+
 	// Data length
 	binary.LittleEndian.PutUint32(wav[40:43], uint32(dataLen))
 
