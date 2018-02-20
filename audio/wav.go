@@ -70,7 +70,7 @@ func NewWAV() *WAV {
 func NewWAVFromParams(params *WAVParams) *WAV {
 	// create a WAV from the given params
 	// use defaults from previous function if any value is 0
-	if params == nil || len(params) != 4 {
+	if params == nil {
 		return NewWAV()
 	}
 	if params.NumChannels == 0 {
@@ -149,12 +149,12 @@ func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 // is silent
 func getRMS(sampleSize uint16, audioData []byte) float64 {
 	sum := 0.0
-	for i := 0; i < len(audioData); i += sampleSize {
+	for i := uint16(0); i < uint16(len(audioData)); i += sampleSize {
 		val := binary.LittleEndian.Uint64(audioData[i:(i + sampleSize)])
-		sum += Math.Pow(2.0, float64(val))
+		sum += math.Pow(2.0, float64(val))
 	}
 
-	return math.Sqrt(sum / (len(audioData)/sampleSize))
+	return math.Sqrt(sum / (float64(len(audioData)/int(sampleSize))))
 }
 
 // TrimSilent is called on a WAV struct to trim the silent portions from the
@@ -199,7 +199,7 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 			break
 		}
 	}
-	paddingSamples := uint16((uint32(padding) * w.SampleRate)) * sizeOfSample
+	paddingSamples := uint16(padding * float64(w.SampleRate)) * sizeOfSample
 	w.audioData = w.audioData[N1-paddingSamples : N2+paddingSamples-1]
 	return w
 }
