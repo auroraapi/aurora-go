@@ -64,12 +64,13 @@ func NewWAV() *WAV {
 	}
 }
 
-// NewWAVFromParams [... fill in documentation]
+// NewWAVFromParams returns a new WAV file from the passed in parameters
+// If any of the parameters are 0, then it will be given the default 
+// values
 func NewWAVFromParams(params *WAVParams) *WAV {
 	// create a WAV from the given params
 	// use defaults from previous function if any value is 0
-	// return error if params are invalid
-	if params == nil {
+	if params == nil || len(params) != 4 {
 		return NewWAV()
 	}
 	if params.NumChannels == 0 {
@@ -93,7 +94,9 @@ func NewWAVFromParams(params *WAVParams) *WAV {
 	}
 }
 
-// NewWAVFromData [... fill in documentation]
+// NewWAVFromData creates a WAV format struct from the given data buffer
+// The buffer is broken up into its respective information and that 
+// information is used to create the WAV format struct
 func NewWAVFromData(data []byte) (*WAV, error) {
 	// create a WAV from the given buffer.
 	// return error if len(data) < 44
@@ -131,7 +134,8 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 	}, nil
 }
 
-// NewWAVFromReader [... fill in documentation]
+// NewWAVFromReader takes in a reader and creates a new WAV format 
+// with the given information. 
 func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
@@ -140,27 +144,32 @@ func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 	return NewWAVFromData(b)
 }
 
-func getRMS(sizeOfSample uint16, audioData []byte) float64 {
-	// What happens if audioData is larger than Uint16? 
-	sampleValue := binary.LittleEndian.Uint16(audioData)
-	sumSquares := math.Pow(float64(2), float64(sampleValue))
-	numOfSamples := float64(len(audioData)) / float64(sizeOfSample)
-	rms := math.Sqrt(sumSquares / numOfSamples)
-	return rms
+// getRMS is a helper function used to calculate the RMS. This is called 
+// by TrimSilent which uses RMS to determine whether the sample of audio
+// is silent
+func getRMS(sampleSize uint16, audioData []byte) float64 {
+	sum := 0.0
+	for i := 0; i < len(audioData); i += sampleSize {
+		val := binary.LittleEndian.Uint64(audioData[i:(i + sampleSize)])
+		sum += Math.Pow(2.0, float64(val))
+	}
+
+	return math.Sqrt(sum / (len(audioData)/sampleSize))
 }
 
-// TrimSilent [... fill in documentation]
+// TrimSilent is called on a WAV struct to trim the silent portions from the
+// ends of the file while leaving a certain amount of padding
 func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 	// trim silence from the ends of the file, leaving a certain amount of padding
 	// numSamples := uint16(len(w.audioData)) * 8 / uint16(w.BitsPerSample)
 	sizeOfSample := uint16(w.BitsPerSample / 8)
-	rmsSampleCount := uint16(float64(1.0 / 16.0) * float64(w.SampleRate))
+	rmsSampleCount := uint16((1.0 / 16.0) * float64(w.SampleRate))
 
 	// get max amplitude
-	maxPossibleAmp := uint16(math.Exp2(float64(w.BitsPerSample)))
-	maxPossibleVal := maxPossibleAmp / 2
+	maxPossibleAmp := math.Exp2(float64(w.BitsPerSample))
+	maxPossibleVal := maxPossibleAmp / 2.0
 
-	var silenceThresh float64 = float64(threshold) * float64(maxPossibleVal)
+	silenceThresh := threshold * maxPossibleVal
 
 	// Trimming the beginning
 	N1 := uint16(0)
@@ -169,7 +178,7 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 		// sampleValue := binary.LittleEndian.Uint16(w.audioData[N1:N1+sizeOfSample-1])
 		// sumSquares += math.Pow(float64(2), float64(sampleValue))
 		// rms := math.Sqrt(sumSquares / float64(numSamples))
-		rms := getRMS(sizeOfSample, w.audioData[N1:N1+sizeOfSample*rmsSampleCount-1])
+		rms := getRMS(sizeOfSample, w.audioData[N1:N1+sizeOfSample*rmsSampleCount])
 
 		N1 += sizeOfSample * rmsSampleCount
 		if rms > silenceThresh {
@@ -183,7 +192,7 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 		// sampleValue := binary.LittleEndian.Uint16(w.audioData[N2-sizeOfSample:N2-1])
 		// sumSquares += math.Pow(float64(2), float64(sampleValue))
 		// rms := math.Sqrt(sumSquares / float64(numSamples))
-		rms := getRMS(sizeOfSample, w.audioData[N2-sizeOfSample*rmsSampleCount:N2-1])
+		rms := getRMS(sizeOfSample, w.audioData[N2-sizeOfSample*rmsSampleCount:N2])
 
 		N2 -= sizeOfSample * rmsSampleCount
 		if rms > silenceThresh {
@@ -203,12 +212,9 @@ func (w *WAV) AddAudioData(d []byte) {
 	}
 }
 
-// Data [... fill in documentation]
+// Data creates the header and data based on the WAV struct and returns
+// a fully formatted WAV file format
 func (w *WAV) Data() ([]byte, error) {
-	// create header + data (like the function I sent you) based on
-	// params stored in w and properties of the data
-	// http://soundfile.sapp.org/doc/WaveFormat/
-	// remember to set all calculated fields
 	// find first data index
 	dataLen := len(w.audioData)
 	headerLen := 44
