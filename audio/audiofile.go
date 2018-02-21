@@ -1,202 +1,230 @@
 package audio
 
-import  (
-	"os"
+import (
+	"encoding/binary"
 	"io"
-	"math"
+	"io/ioutil"
+	"os"
+
+	_ "github.com/nkansal96/aurora-go/errors"
+
 	"github.com/gordonklaus/portaudio"
 )
 
 const (
-	BufSize uint16 = Math.pow(2,10)
-	MaxThresh uint16 = Math.pow(2,14)
-	SilentThresh uint16 = Math.pow(2,10)
-	NumChannels uint16 = 1
-	Rate uint16 = 16000
+	BufSize      = 1 << 10
+	MaxThresh    = 1 << 14
+	SilentThresh = 1 << 10
+	SampleRate   = 16000
+	NumChannels  = 1
 )
 
 // File is an audio file
 type File struct {
-	audioData WAV
+	AudioData *WAV
 }
 
-//Writes the audio data to a file
-func (f* File) WriteToFile (filename string) {
-	data, err := audioData.Data()
-	chk(err)
-	err = ioutil.WriteFile(filename, data, 0644)
-	chk(err)
-	return
+// Writes the audio data to a file
+func (f *File) WriteToFile(filename string) error {
+	return ioutil.WriteFile(filename, f.AudioData.Data(), 0644)
 }
 
-//Pads silence to both the left and right channels of the audio data
-func (f* File) Pad (secs int16) {
-	padding := make([]byte, secs * rate)
-	oldData, err := f.audioData.Data()
-	chk(err)
-	f.audioData, err := NewWAVFromData(padding)
-	chk(err)
-	f.audioData.AddAudioData(oldData)
-	f.audioData.AddAudioData(padding)
+// Pad adds silence to both the beginning and end of the audio data. Silence
+// is specified in seconds.
+func (f *File) Pad(seconds float64) {
+	// calculate number of bytes needed to pad given amount of seconds
+	bytes := float64(f.AudioData.BitsPerSample/8) * float64(f.AudioData.SampleRate) * float64(f.AudioData.NumChannels) * seconds
+	padding := make([]byte, int(bytes))
+
+	// copy the WAV parameters, set initial data to the left padding
+	newWav := NewWAVFromParams(&WAVParams{
+		NumChannels:   f.AudioData.NumChannels,
+		SampleRate:    f.AudioData.SampleRate,
+		BitsPerSample: f.AudioData.BitsPerSample,
+		AudioData:     padding,
+	})
+
+	// add the original data and ther right padding
+	newWav.AddAudioData(f.AudioData.AudioData())
+	newWav.AddAudioData(padding)
+
+	// set the audio data to the new wav
+	f.AudioData = newWav
 }
 
-//Pads silence to the left channel of the audio data
-func (f* File) PadLeft (secs int16) {
-	padding := make([]byte, secs * rate)
-	oldData, err := f.audioData.Data()
-	chk(err)
-	f.audioData, err := NewWAVFromData(padding)
-	chk(err)
-	f.audioData.AddAudioData(oldData)
+// PadLeft adds silence to the beginning of the audio data
+func (f *File) PadLeft(seconds float64) {
+	// calculate number of bytes needed to pad given amount of seconds
+	bytes := float64(f.AudioData.BitsPerSample/8) * float64(f.AudioData.SampleRate) * float64(f.AudioData.NumChannels) * seconds
+	padding := make([]byte, int(bytes))
+
+	// copy the WAV parameters, set initial data to the left padding
+	newWav := NewWAVFromParams(&WAVParams{
+		NumChannels:   f.AudioData.NumChannels,
+		SampleRate:    f.AudioData.SampleRate,
+		BitsPerSample: f.AudioData.BitsPerSample,
+		AudioData:     padding,
+	})
+
+	// add the original data
+	newWav.AddAudioData(f.AudioData.AudioData())
+
+	// set the audio data to the new wav
+	f.AudioData = newWav
 }
 
-//Pads silence to the right channel of the audio data
-func (f* File) PadRight (secs int16) {
-	padding := make([]byte, secs * rate)
-	f.audioData.AddAudioData(padding)
+//PadRight adds silence to the end of the audio data
+func (f *File) PadRight(seconds float64) {
+	// calculate number of bytes needed to pad given amount of seconds
+	bytes := float64(f.AudioData.BitsPerSample/8) * float64(f.AudioData.SampleRate) * float64(f.AudioData.NumChannels) * seconds
+	padding := make([]byte, int(bytes))
+
+	// add the padding to the right
+	f.AudioData.AddAudioData(padding)
 }
 
 //Trims all silence from the audio data
-func (F* File) TrimSilence {
-	audioData.TrimSilent(SilentThresh, 0)
+func (F *File) TrimSilence() {
+	// Todo: wrong
+	// audioData.TrimSilent(SilentThresh, 0)
 }
 
-//Plays the Audio File
-func (f* File) Play {
-	portaudio.initialize()
-	defer portaudio.terminate()
-
-	data, err := f.audioData.Data()
-	chk(err)
-	out := make([]byte, 64)
-	stream, err := portaudio.OpenDefaultStream(0, NumChannels, Rate, len(out), out)
-	chk(err)
-	defer stream.Close()
-
-	//Making the assumption that no audio file will be under 64 bytes long
-	for i := 0; i <= len(data); i += 64 {
-		copy(out, data[i:i+64])
-		chk(stream.Write())
-	}
-	return
-}
-
-//Creates a new Audio File from a recording
-//length is the length in seconds that the recording needs to be
-//silence_len is the amount of time after which to stop recording if only silence is deteced
-func NewFromRecording(length float64, silence_len float64) *File {
+// Play plays the Audio File to the default output
+func (f *File) Play() error {
+	// initialize the underlying APIs for audio transmission
 	portaudio.Initialize()
 	defer portaudio.Terminate()
 
-	data := ([]int16, 0)
-	inBuffer := ([]int16, 64)
+	// create a buffer for audio to be put into
+	// hardcode 16-bit sample until i figure out a better way to do this
+	bufLen := int(BufSize * f.AudioData.NumChannels)
+	buf := make([]uint16, bufLen)
 
-	stream, error := portaudio.OpenDefaultStream(NumChannels, 0, Rate, len(inBuffer), inBuffer)
-	chk(error)
+	// create the audio stream to write to
+	stream, err := portaudio.OpenDefaultStream(0, int(f.AudioData.NumChannels), float64(f.AudioData.SampleRate), BufSize, buf)
+	if err != nil {
+		return err
+	}
+
 	defer stream.Close()
+	defer stream.Stop()
+	stream.Start()
 
-	chk(stream.Start())
-	var silentFor float64 = 0
-	for {
-		chk(stream.Read())
-		data = append(data, inBuffer)
-
-		if IsSilent(inBuffer) {
-			silentFor = silentFor + float64(len(inBuffer))/Rate
+	//Making the assumption that no audio file will be under 64 bytes long
+	data := f.AudioData.AudioData()
+	for i := 0; i <= len(data); i += bufLen * 2 {
+		// need to convert each 2-bytes in [i, i+buffLen*2] to little endian uint16
+		for j := 0; j < bufLen; j++ {
+			buf[j] = binary.LittleEndian.Uint16(data[i+(j*2) : i+(j*2+1)])
 		}
-
-		if length == 0 && silentFor > silence_len {
-			break
-		}
-
-		if length > 0 && len(data) > int(length*Rate) {
-			break
+		err := stream.Write()
+		if err != nil {
+			// should we do something here? we ignore it in python
 		}
 	}
 
-	var file File	
-	file.audioData, err := NewWAVFromData(data)
-	chk(err)
-	return &file
-}
-
-//Creates a new Audio File from byte data
-func NewFromBytes(b []byte) *File {
-	// implement this
-	var file File
-	file.audioData, err := NewWAVFromData(b)
-	chk(err)
-	return &file
-}
-
-//Creates a new Audio File from an io.Reader
-func NewFromReader(r *io.Reader) *File {
-	// implement this
-	data, ioError := ioutil.ReadAll(r)
-	chk(ioError)
-	wav, wavError := NewWAVFromData(data)
-	chk(wavError)
-	return &File {
-		audioData: wav
-	}
 	return nil
 }
 
+// NewFromRecording creates a new File by recording from the default input stream.
+// length specifies the maximum length of the recording in seconds. silenceLen
+// specifies how long in seconds to automatically stop after when consecutive
+// silence is detected.
+func NewFromRecording(length float64, silenceLen float64) (*File, error) {
+	portaudio.Initialize()
+	defer portaudio.Terminate()
+
+	buf := make([]uint16, BufSize)
+	data := make([]uint16, 0)
+
+	stream, err := portaudio.OpenDefaultStream(NumChannels, 0, SampleRate, BufSize, buf)
+	if err != nil {
+		return nil, err
+	}
+
+	defer stream.Close()
+	defer stream.Stop()
+	stream.Start() // check err
+
+	silentFor := 0.0
+	for {
+		err := stream.Read()
+		if err != nil {
+			// should we do something here? we ignore it in python
+		}
+
+		data = append(data, buf...)
+
+		if IsSilent(buf) {
+			silentFor += float64(len(buf)) / SampleRate
+		}
+
+		if length == 0 && silentFor > silenceLen {
+			break
+		}
+
+		if length > 0 && len(data) > int(length*SampleRate) {
+			break
+		}
+	}
+
+	audioData := make([]byte, 2*len(data))
+	for i := 0; i < len(data); i += 2 {
+		audioData[i] = byte(data[i] & 0xFF)
+		audioData[i+1] = byte((data[i] >> 8) & 0xFF)
+	}
+
+	return &File{
+		AudioData: NewWAVFromParams(&WAVParams{
+			NumChannels:   NumChannels,
+			SampleRate:    SampleRate,
+			BitsPerSample: 16,
+			AudioData:     audioData,
+		}),
+	}, nil
+}
+
+//NewFromBytes creates a new Audio File from WAV data
+func NewFromBytes(b []byte) (*File, error) {
+	wav, err := NewWAVFromData(b)
+	return &File{wav}, err
+}
+
+//Creates a new Audio File from an io.Reader
+func NewFromReader(r io.Reader) (*File, error) {
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return NewFromBytes(data)
+}
+
 //Creates a new Audio File from an os.File
-func NewFromFile(f *os.File) *File {
-	return NewFromFileName(f.Name())
+func NewFromFile(f *os.File) (*File, error) {
+	return NewFromReader(f)
 }
 
 //Creates a new Audio File from a given filename
-func NewFromFileName(f string) *File {
+func NewFromFileName(f string) (*File, error) {
 	data, err := ioutil.ReadFile(f)
-	chk(err)
-	wav, err := NewWAVFromData(data)
-	chk(err)
-	return &File {
-		audioData: *wav
+	if err != nil {
+		return nil, err
 	}
-}
-
-//Creates a new Audio File from a Port Audio Stream
-//Assumes that streams are opened and closed by the callee
-//This function will terminate execution when the stream has no more bytes to send
-//b is the buffer passed to the stream upon initialization
-func NewFromStream(s portaudio.Stream, b []byte) *File {
-	data := make([]byte, 0)
-	numAvailableBytes, err := s.AvailableToRead()
-	chk(err)
-	while numAvailableBytes > 0 {
-		chk(s.Read())
-		data = append(data, b)
-		numAvailableBytes, err := s.AvailableToRead()
-	}
-
-	var file File
-	file.audioData, err = NewWAVFromData(data)
-	return &file
+	return NewFromBytes(data)
 }
 
 //Returns the wav data contained in the audio file
 func (f *File) WAVData() []byte {
-	data, err = audioData.Data()
-	chk(err)
-	return data
+	return f.AudioData.Data()
 }
 
 //Determines whether an audio slice is silent or not
-func IsSilent(audio []byte) bool {
-	var max byte = audio[0]
-	for _, value := range array {
+func IsSilent(audio []uint16) bool {
+	var max uint16 = audio[0]
+	for _, value := range audio {
 		if value > max {
 			max = value
 		}
 	}
 	return max < SilentThresh
-} 
-
-func chk(err error) {
-	if err != nil {
-		panic(err)
-	}
 }

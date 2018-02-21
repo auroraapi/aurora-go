@@ -55,7 +55,8 @@ func Listen(params *ListenParams) *Speech {
 		params = NewListenParams()
 	}
 
-	return &Speech{Audio: audio.NewFromRecording(params.Length, params.SilenceLen)}
+	audio, _ := audio.NewFromRecording(params.Length, params.SilenceLen)
+	return &Speech{Audio: audio }
 }
 
 func ContinuouslyListen(params *ListenParams) (chan *Speech, chan bool) {

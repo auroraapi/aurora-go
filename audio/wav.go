@@ -65,7 +65,7 @@ func NewWAV() *WAV {
 }
 
 // NewWAVFromParams returns a new WAV file from the passed in parameters
-// If any of the parameters are 0, then it will be given the default 
+// If any of the parameters are 0, then it will be given the default
 // values
 func NewWAVFromParams(params *WAVParams) *WAV {
 	// create a WAV from the given params
@@ -95,7 +95,7 @@ func NewWAVFromParams(params *WAVParams) *WAV {
 }
 
 // NewWAVFromData creates a WAV format struct from the given data buffer
-// The buffer is broken up into its respective information and that 
+// The buffer is broken up into its respective information and that
 // information is used to create the WAV format struct
 func NewWAVFromData(data []byte) (*WAV, error) {
 	// create a WAV from the given buffer.
@@ -134,8 +134,8 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 	}, nil
 }
 
-// NewWAVFromReader takes in a reader and creates a new WAV format 
-// with the given information. 
+// NewWAVFromReader takes in a reader and creates a new WAV format
+// with the given information.
 func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
@@ -144,7 +144,7 @@ func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 	return NewWAVFromData(b)
 }
 
-// getRMS is a helper function used to calculate the RMS. This is called 
+// getRMS is a helper function used to calculate the RMS. This is called
 // by TrimSilent which uses RMS to determine whether the sample of audio
 // is silent
 func getRMS(sampleSize uint16, audioData []byte) float64 {
@@ -154,7 +154,7 @@ func getRMS(sampleSize uint16, audioData []byte) float64 {
 		sum += math.Pow(2.0, float64(val))
 	}
 
-	return math.Sqrt(sum / (float64(len(audioData)/int(sampleSize))))
+	return math.Sqrt(sum / (float64(len(audioData) / int(sampleSize))))
 }
 
 // TrimSilent is called on a WAV struct to trim the silent portions from the
@@ -199,7 +199,7 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
 			break
 		}
 	}
-	paddingSamples := uint16(padding * float64(w.SampleRate)) * sizeOfSample
+	paddingSamples := uint16(padding*float64(w.SampleRate)) * sizeOfSample
 	w.audioData = w.audioData[N1-paddingSamples : N2+paddingSamples-1]
 	return w
 }
@@ -212,9 +212,14 @@ func (w *WAV) AddAudioData(d []byte) {
 	}
 }
 
+// AudioData returns the raw audio data
+func (w *WAV) AudioData() []byte {
+	return w.audioData
+}
+
 // Data creates the header and data based on the WAV struct and returns
 // a fully formatted WAV file format
-func (w *WAV) Data() ([]byte, error) {
+func (w *WAV) Data() []byte {
 	// find first data index
 	dataLen := len(w.audioData)
 	headerLen := 44
@@ -272,5 +277,5 @@ func (w *WAV) Data() ([]byte, error) {
 	// Data length
 	binary.LittleEndian.PutUint32(wav[40:43], uint32(dataLen))
 
-	return append(wav, w.audioData[0:]...), nil
+	return append(wav, w.audioData[0:]...)
 }
