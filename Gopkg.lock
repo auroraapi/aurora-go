@@ -8,6 +8,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/gordonklaus/portaudio"
+  packages = ["."]
+  revision = "e66c30a9c4ca11f93538cf8c004831bfb76f3838"
+
+[[projects]]
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
   revision = "792786c7400a136282c1664665ae0a8db921c6c2"
@@ -22,6 +28,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f2079202b6cb62a08d79607c78d36fb20719cfc1e2b0db67bc4c63bc8e8ac4d2"
+  inputs-digest = "298fc27bc386cf2e089fb06f7178a654af1727062c3a9cd1f64832022fd17a1a"
   solver-name = "gps-cdcl"
   solver-version = 1
