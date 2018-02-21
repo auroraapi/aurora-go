@@ -33,6 +33,22 @@ func TestTextInterpretEmptyString(t *testing.T) {
 	require.IsType(t, apiErrorType, err)
 }
 
+func TestTextInterpretMultipleEntities(t *testing.T) {
+	query := "what is the weather in los angeles tomorrow"
+	text := aurora.NewText(query)
+	require.Equal(t, query, text.Text)
+
+	i, err := text.Interpret()
+	require.Nil(t, err)
+	require.NotNil(t, i)
+	require.Equal(t, "weather", i.Intent)
+	require.Equal(t, "los angeles", i.Entities["location"])
+	require.Equal(t, "tomorrow", i.Entities["time"])
+}
+
+
+
+
 // TestMain sets up testing parameters and runs all tests
 func TestMain(m *testing.M) {
 	// set configuration from environment
