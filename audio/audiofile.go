@@ -85,8 +85,8 @@ func (f *File) PadRight(seconds float64) {
 
 //Trims all silence from the audio data
 func (F *File) TrimSilence() {
-	// Todo: wrong
-	// audioData.TrimSilent(SilentThresh, 0)
+	// TODO: calibrate constants
+	f.AudioData.TrimSilent(0.10, 0.25)
 }
 
 // Play plays the Audio File to the default output
