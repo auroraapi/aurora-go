@@ -147,7 +147,7 @@ func NewFromRecording(length float64, silenceLen float64) (*File, error) {
 	defer stream.Close()
 	defer stream.Stop()
 	if err := stream.Start(); err != nil {
-		return err
+		return nil, err
 	}
 
 	// discard silence at the beginning of the recording. Why waste time with it?
@@ -206,12 +206,16 @@ func NewFromRecording(length float64, silenceLen float64) (*File, error) {
 //NewFromBytes creates a new Audio File from WAV data
 func NewFromBytes(b []byte) (*File, error) {
 	wav, err := NewWAVFromData(b)
+	if err != nil {
+		return nil, err
+	}
 	return &File{wav}, err
 }
 
 //Creates a new Audio File from an io.Reader
 func NewFromReader(r io.Reader) (*File, error) {
 	data, err := ioutil.ReadAll(r)
+	fmt.Printf("Read %d bytes\n", len(data))
 	if err != nil {
 		return nil, err
 	}
