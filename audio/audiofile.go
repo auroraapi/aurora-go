@@ -2,6 +2,7 @@ package audio
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
