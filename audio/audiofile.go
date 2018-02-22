@@ -3,7 +3,6 @@ package audio
 import (
 	"bufio"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -137,10 +136,13 @@ func (f *File) Play() error {
 // not correct. Therefore, the resulting WAV should be read until EOF.
 func NewRecordingStream(length float64, silenceLen float64) io.Reader {
 	pr, pw := io.Pipe()
-	bufwr := bufio.NewWriterSize(pw, 2000*BufSize)
-	bufrd := bufio.NewReaderSize(pr, 2000*BufSize)
+	bufwr := bufio.NewWriterSize(pw, 1000*BufSize)
+	bufrd := bufio.NewReaderSize(pr, 1000*BufSize)
 
 	go func() {
+		defer pw.Close()
+		defer bufwr.Flush()
+
 		header := NewWAV().Data()
 		bufwr.Write(header)
 
@@ -193,7 +195,6 @@ func NewFileFromBytes(b []byte) (*File, error) {
 //Creates a new Audio File from an io.Reader
 func NewFileFromReader(r io.Reader) (*File, error) {
 	data, err := ioutil.ReadAll(r)
-	fmt.Printf("Read %d bytes\n", len(data))
 	if err != nil {
 		return nil, err
 	}

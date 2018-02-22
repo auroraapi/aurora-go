@@ -12,8 +12,10 @@ import (
 // is silent
 func rms(sampleSize int, audioData []byte) float64 {
 	sum := 0.0
-	for i := 0; i < len(audioData); i += sampleSize {
-		val := binary.LittleEndian.Uint64(audioData[i:(i + sampleSize)])
+	for i := 0; i < len(audioData)-1; i += sampleSize {
+		// had to hard code to Uint16 or else it tries to 8 bytes for Uint64
+		// note that sampleSize MUST be 2 for this to work
+		val := binary.LittleEndian.Uint16(audioData[i:(i + sampleSize)])
 		sum += float64(val * val)
 	}
 
