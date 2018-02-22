@@ -31,13 +31,11 @@ func TestGetInterpretEmptyString(t *testing.T) {
 }
 
 func TestGetInterpret(t *testing.T) {
-	r, err := api.GetInterpret(c, "remind me to pick up groceries tomorrow at 3 pm")
+	r, err := api.GetInterpret(c, "what time is it in los angeles")
 	require.Nil(t, err)
 	require.NotNil(t, r)
-	require.Equal(t, "set_reminder", r.Intent)
-	require.Equal(t, "", r.Entities["location"])
-	require.Equal(t, "pick up groceries", r.Entities["task"])
-	require.Equal(t, "tomorrow at 3 pm", r.Entities["time"])
+	require.Equal(t, "time", r.Intent)
+	require.Equal(t, "los angeles", r.Entities["location"])
 }
 
 func TestMain(m *testing.M) {
