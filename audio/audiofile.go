@@ -86,7 +86,7 @@ func (f *File) PadRight(seconds float64) {
 //Trims all silence from the audio data
 func (f *File) TrimSilence() {
 	// TODO: calibrate constants
-	f.AudioData.TrimSilent(0.10, 0.25)
+	f.AudioData.TrimSilent(0.03, 0.25)
 }
 
 // Play plays the Audio File to the default output
@@ -131,9 +131,11 @@ func (f *File) Play() error {
 // specifies how long in seconds to automatically stop after when consecutive
 // silence is detected.
 func NewFromRecording(length float64, silenceLen float64) (*File, error) {
+	// initialize the underlying APIs for audio transmission
 	portaudio.Initialize()
 	defer portaudio.Terminate()
 
+	// 
 	buf := make([]uint16, BufSize)
 	data := make([]uint16, 0)
 
@@ -144,8 +146,21 @@ func NewFromRecording(length float64, silenceLen float64) (*File, error) {
 
 	defer stream.Close()
 	defer stream.Stop()
-	stream.Start() // check err
+	if err := stream.Start(); err != nil {
+		return err
+	}
 
+	// discard silence at the beginning of the recording. Why waste time with it?
+	for {
+		stream.Read()
+		if !IsSilent(buf) {
+			data = append(data, buf...)
+			break
+		}
+	}
+
+	// read data until the specified amount of silence or until the 
+	// specified amount of length
 	silentFor := 0.0
 	for {
 		err := stream.Read()
@@ -157,6 +172,8 @@ func NewFromRecording(length float64, silenceLen float64) (*File, error) {
 
 		if IsSilent(buf) {
 			silentFor += float64(len(buf)) / SampleRate
+		} else {
+			silentFor = 0.0
 		}
 
 		if length == 0 && silentFor > silenceLen {
@@ -168,6 +185,8 @@ func NewFromRecording(length float64, silenceLen float64) (*File, error) {
 		}
 	}
 
+	// convert each element from a 16-bit value to two 8-bit values that
+	// are equivalent in little-endian form.
 	audioData := make([]byte, 2*len(data))
 	for i := 0; i < len(data); i += 2 {
 		audioData[i] = byte(data[i] & 0xFF)
