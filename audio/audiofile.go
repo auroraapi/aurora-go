@@ -84,7 +84,7 @@ func (f *File) PadRight(seconds float64) {
 }
 
 //Trims all silence from the audio data
-func (F *File) TrimSilence() {
+func (f *File) TrimSilence() {
 	// TODO: calibrate constants
 	f.AudioData.TrimSilent(0.10, 0.25)
 }
