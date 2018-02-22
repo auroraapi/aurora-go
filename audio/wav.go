@@ -102,7 +102,7 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 	// return error if len(data) < 44
 	// extract data from the data according to the spec: http://soundfile.sapp.org/doc/WaveFormat/
 
-	// find first data index
+	// find the end of subchunk2id
 	i := 4
 	for i < len(data) && data[i-4] != 'd' || data[i-3] != 'a' || data[i-2] != 't' || data[i-1] != 'a' {
 		i++
@@ -116,14 +116,18 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 		}
 	}
 
-	// hOff is the header offset. It denotes the start of the header, which is
-	// 44 bytes before the data starts.
-	hOff := i - 44
+	// hOff is the header offset. Even though the header length is actually
+	// 44, we find where the data begins by looking for the letters
+	// "data" which is from bytes 36 to 39. The variable i at this point
+	// pointing to right past the "data" letters
+	hOff := i - 40
 
-	numChannels := binary.LittleEndian.Uint16(data[hOff+22 : hOff+23])
-	sampleRate := binary.LittleEndian.Uint32(data[hOff+24 : hOff+27])
-	bitsPerSample := binary.LittleEndian.Uint16(data[hOff+34 : hOff+35])
-	audioData := data[i:]
+	numChannels := binary.LittleEndian.Uint16(data[hOff+22 : hOff+24])
+	sampleRate := binary.LittleEndian.Uint32(data[hOff+24 : hOff+28])
+	bitsPerSample := binary.LittleEndian.Uint16(data[hOff+34 : hOff+36])
+
+	// The actual sound data begins at byte 44 from the beginning of the header
+	audioData := data[hOff+44:]
 
 	return &WAV{
 		NumChannels:   numChannels,
@@ -214,7 +218,7 @@ func (w *WAV) Data() []byte {
 	wav[3] = 'F'
 
 	// chunk size
-	binary.LittleEndian.PutUint32(wav[4:7], uint32(chunkSize))
+	binary.LittleEndian.PutUint32(wav[4:8], uint32(chunkSize))
 
 	// Format (WAVE)
 	wav[8] = 'W'
@@ -228,24 +232,24 @@ func (w *WAV) Data() []byte {
 	wav[15] = ' '
 
 	// Metadata subchunk size (16)
-	binary.LittleEndian.PutUint32(wav[16:19], 16)
+	binary.LittleEndian.PutUint32(wav[16:20], 16)
 	// Audio format (PCM = 1)
-	binary.LittleEndian.PutUint16(wav[20:21], w.AudioFormat)
+	binary.LittleEndian.PutUint16(wav[20:22], w.AudioFormat)
 	// Num Channels (Mono = 1)
-	binary.LittleEndian.PutUint16(wav[22:23], w.NumChannels)
+	binary.LittleEndian.PutUint16(wav[22:24], w.NumChannels)
 	// Sample Rate (16000 Hz)
-	binary.LittleEndian.PutUint32(wav[24:27], w.SampleRate)
+	binary.LittleEndian.PutUint32(wav[24:28], w.SampleRate)
 
 	// Byte Rate = SampleRate * NumChannels * BitsPerSample/8 = 32000
 	byteRate := w.SampleRate * uint32(w.NumChannels) * uint32(w.BitsPerSample) / 8
-	binary.LittleEndian.PutUint32(wav[28:31], byteRate)
+	binary.LittleEndian.PutUint32(wav[28:32], byteRate)
 
 	// Block Align = NumChannels * BitsPerSample/8
 	blockAlign := w.NumChannels * w.BitsPerSample / 8
-	binary.LittleEndian.PutUint16(wav[32:33], blockAlign)
+	binary.LittleEndian.PutUint16(wav[32:34], blockAlign)
 
 	// Bits per sample = 16
-	binary.LittleEndian.PutUint16(wav[34:35], w.BitsPerSample)
+	binary.LittleEndian.PutUint16(wav[34:36], w.BitsPerSample)
 
 	// Data subchunk ID ("data")
 	wav[36] = 'd'
@@ -254,7 +258,7 @@ func (w *WAV) Data() []byte {
 	wav[39] = 'a'
 
 	// Data length
-	binary.LittleEndian.PutUint32(wav[40:43], uint32(dataLen))
+	binary.LittleEndian.PutUint32(wav[40:44], uint32(dataLen))
 
 	return append(wav, w.audioData[0:]...)
 }
