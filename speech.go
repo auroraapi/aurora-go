@@ -96,7 +96,7 @@ func Listen(params *ListenParams) (*Speech, error) {
 		params = NewListenParams()
 	}
 
-	audio, err := audio.NewFromRecording(params.Length, params.SilenceLen)
+	audio, err := audio.NewFileFromRecording(params.Length, params.SilenceLen)
 	if err != nil {
 		return nil, err
 	}

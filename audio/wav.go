@@ -98,11 +98,7 @@ func NewWAVFromParams(params *WAVParams) *WAV {
 // The buffer is broken up into its respective information and that
 // information is used to create the WAV format struct
 func NewWAVFromData(data []byte) (*WAV, error) {
-	// create a WAV from the given buffer.
-	// return error if len(data) < 44
-	// extract data from the data according to the spec: http://soundfile.sapp.org/doc/WaveFormat/
-
-	// find the end of subchunk2id
+	// find the end of subchunk2id (data)
 	i := 4
 	for i < len(data) && data[i-4] != 'd' || data[i-3] != 'a' || data[i-2] != 't' || data[i-1] != 'a' {
 		i++
@@ -154,7 +150,7 @@ func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 // relative to the maximum amplitude of the waveform
 func (w *WAV) TrimSilent(threshold float64, padding float64) {
 	// sample size in bytes
-	sampleSize := int(w.BitsPerSample / 8)
+	sampleSize := int(w.NumChannels * w.BitsPerSample / 8)
 	// number of bytes to examine in each step
 	step := 1024
 

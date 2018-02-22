@@ -24,5 +24,5 @@ func GetTTS(c *config.Config, text string) (*audio.File, error) {
 	}
 
 	defer res.Body.Close()
-	return audio.NewFromReader(res.Body)
+	return audio.NewFileFromReader(res.Body)
 }
