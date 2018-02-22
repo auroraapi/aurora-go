@@ -148,51 +148,39 @@ func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 // ends of the file while leaving a certain amount of padding. The padding input is 
 // specified in seconds. The threshold input is a decimal (between 0 and 1) and is 
 // relative to the maximum amplitude of the waveform
-func (w *WAV) TrimSilent(threshold float64, padding float64) *WAV {
-	// trim silence from the ends of the file, leaving a certain amount of padding
-	// numSamples := uint16(len(w.audioData)) * 8 / uint16(w.BitsPerSample)
-	sizeOfSample := uint16(w.BitsPerSample / 8)
-	rmsSampleCount := uint16((1.0 / 16.0) * float64(w.SampleRate)) / sizeOfSample
+func (w *WAV) TrimSilent(threshold float64, padding float64) {
+	// sample size in bytes
+	sampleSize := int(w.BitsPerSample / 8)
+	// number of bytes to examine in each step
+	step := 1024
 
 	// get max amplitude
-	maxPossibleAmp := math.Exp2(float64(w.BitsPerSample))
-	maxPossibleVal := maxPossibleAmp / 2.0
-
-	silenceThresh := threshold * maxPossibleVal
+	maxPossibleAmp := math.Exp2(float64(w.BitsPerSample)) / 2.0
+	// silenceThresh is a percentage of the maximum wave height
+	silenceThresh := threshold * maxPossibleAmp
 
 	// Trimming the beginning
-	N1 := uint32(0)
-
-	for N1 < uint32(len(w.audioData)) {
-		// sampleValue := binary.LittleEndian.Uint16(w.audioData[N1:N1+sizeOfSample-1])
-		// sumSquares += math.Pow(float64(2), float64(sampleValue))
-		// rms := math.Sqrt(sumSquares / float64(numSamples))
-		rms := GetRMS(sizeOfSample, w.audioData[N1:N1+uint32(sizeOfSample*rmsSampleCount)])
-
-		if rms > silenceThresh {
+	N1 := 0
+	for N1 < len(w.audioData) {
+		sampleRMS := rms(sampleSize, w.audioData[N1:N1+(sampleSize*step)])
+		if sampleRMS > silenceThresh {
 			break
-		} else {
-			N1 += uint32(sizeOfSample * rmsSampleCount)
 		}
+		N1 += sampleSize * step
 	}
 
 	// Trimming the end
-	N2 := uint32(len(w.audioData))
+	N2 := len(w.audioData)
 	for N2 >= 0 {
-		// sampleValue := binary.LittleEndian.Uint16(w.audioData[N2-sizeOfSample:N2-1])
-		// sumSquares += math.Pow(float64(2), float64(sampleValue))
-		// rms := math.Sqrt(sumSquares / float64(numSamples))
-		rms := GetRMS(sizeOfSample, w.audioData[N2-uint32(sizeOfSample*rmsSampleCount):N2])
-
-		if rms > silenceThresh {
+		sampleRMS := rms(sampleSize, w.audioData[N2-(sampleSize*step):N2])
+		if sampleRMS > silenceThresh {
 			break
-		} else {
-			N2 -= uint32(sizeOfSample * rmsSampleCount)
-		}
+		} 
+		N2 -= sampleSize * step
 	}
-	paddingSamples := uint32(padding * float64(w.SampleRate) * float64(sizeOfSample))
-	w.audioData = w.audioData[N1-paddingSamples : N2+paddingSamples-1]
-	return w
+
+	paddingSamples := int(padding * float64(w.SampleRate) * float64(sampleSize))
+	w.audioData = w.audioData[N1-paddingSamples : N2+paddingSamples]
 }
 
 // AddAudioData adds the passed-in audio bytes to the WAV struct 
