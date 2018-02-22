@@ -50,7 +50,16 @@ func (t *Speech) Text() (*Text, error) {
 	return NewText(response.Transcript), err
 }
 
-func ContinouslyListen(params *ListenParams) (chan *Speech, chan bool) {
+func Listen(params *ListenParams) *Speech {
+	if params == nil {
+		params = NewListenParams()
+	}
+
+	audio, _ := audio.NewFromRecording(params.Length, params.SilenceLen)
+	return &Speech{Audio: audio }
+}
+
+func ContinuouslyListen(params *ListenParams) (chan *Speech, chan bool) {
 	if params == nil {
 		params = NewListenParams()
 	}
@@ -62,7 +71,7 @@ func ContinouslyListen(params *ListenParams) (chan *Speech, chan bool) {
 		defer close(listenChannel)
 		for {
 			select {
-			case listenChannel <- listen(params):
+			case listenChannel <- Listen(params):
 			case <-doneChannel:
 				return
 			}
@@ -72,10 +81,12 @@ func ContinouslyListen(params *ListenParams) (chan *Speech, chan bool) {
 	return listenChannel, doneChannel
 }
 
-func listen(params *ListenParams) *Speech {
-	if params == nil {
-		params = NewListenParams()
-	}
+func ListenAndTranscribe(params *ListenParams) (*Text, error) {
+	// Todo: implement this
+	return nil, nil
+}
 
-	return &Speech{Audio: audio.NewFromRecording(params.Length, params.SilenceLen)}
+func ContinuouslyListenAndTranscribe(params *ListenParams) (chan *Text, chan bool) {
+	// Todo: implement this
+	return nil, nil
 }

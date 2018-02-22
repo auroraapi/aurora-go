@@ -54,7 +54,6 @@ type Backend interface {
 
 	// Call the backend to perform a request
 	Call(params *CallParams) (*http.Response, error)
-	CallMultipart(params *CallParams) (*http.Response, error)
 
 	// Lower level methods that can be called as well
 	NewRequest(params *CallParams) (*http.Request, error)

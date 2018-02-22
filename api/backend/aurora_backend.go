@@ -3,9 +3,7 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"mime/multipart"
 	"net/http"
 	"strings"
 	"time"
@@ -59,51 +57,6 @@ func (b *AuroraBackend) Call(params *CallParams) (*http.Response, error) {
 	}
 
 	return b.Do(req)
-}
-
-// CallMultipart implements a multipart call to the backend
-func (b *AuroraBackend) CallMultipart(params *CallParams) (*http.Response, error) {
-	// Pipe the output from the multipart writer so that we don't need to
-	// buffer the file in memory before sending it over the network
-	r, w := io.Pipe()
-
-	// create a multipart form writing to the pipe
-	multi := multipart.NewWriter(w)
-
-	// don't block while copying data
-	go func() {
-		defer w.Close()
-		defer multi.Close()
-		// copy file data
-		if params.Files != nil {
-			for _, f := range params.Files {
-				part, err := multi.CreateFormFile(f.Name, f.FileName)
-				if err != nil {
-					return
-				}
-				_, err = part.Write(f.Data)
-				if err != nil {
-					return
-				}
-			}
-		}
-		// copy form data
-		if params.Form != nil {
-			for k := range params.Form {
-				multi.WriteField(k, params.Form.Get(k))
-			}
-		}
-	}()
-
-	// set some parameters
-	if params.Headers == nil {
-		params.Headers = make(http.Header)
-	}
-	params.Headers.Add("Content-type", multi.FormDataContentType())
-	params.Body = r
-
-	// execute the rest of the call normally
-	return b.Call(params)
 }
 
 // NewRequest creates an http.Request from the given parameters

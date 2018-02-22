@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 
 	"github.com/nkansal96/aurora-go/api/backend"
@@ -21,12 +22,10 @@ func GetSTT(c *config.Config, audio *audio.File) (*STTResponse, error) {
 		Credentials: c.GetCredentials(),
 		Method:      "POST",
 		Path:        sttEndpoint,
-		Files: []backend.MultipartFile{
-			backend.MultipartFile{"audio", "audio.wav", audio.WAVData()},
-		},
+		Body:        bytes.NewReader(audio.WAVData()),
 	}
 
-	res, err := c.Backend.CallMultipart(params)
+	res, err := c.Backend.Call(params)
 	if err != nil {
 		return nil, err
 	}
