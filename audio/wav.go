@@ -145,8 +145,8 @@ func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 }
 
 // TrimSilent is called on a WAV struct to trim the silent portions from the
-// ends of the file while leaving a certain amount of padding. The padding input is 
-// specified in seconds. The threshold input is a decimal (between 0 and 1) and is 
+// ends of the file while leaving a certain amount of padding. The padding input is
+// specified in seconds. The threshold input is a decimal (between 0 and 1) and is
 // relative to the maximum amplitude of the waveform
 func (w *WAV) TrimSilent(threshold float64, padding float64) {
 	// sample size in bytes
@@ -175,7 +175,7 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) {
 		sampleRMS := rms(sampleSize, w.audioData[N2-(sampleSize*step):N2])
 		if sampleRMS > silenceThresh {
 			break
-		} 
+		}
 		N2 -= sampleSize * step
 	}
 
@@ -183,7 +183,7 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) {
 	w.audioData = w.audioData[N1-paddingSamples : N2+paddingSamples]
 }
 
-// AddAudioData adds the passed-in audio bytes to the WAV struct 
+// AddAudioData adds the passed-in audio bytes to the WAV struct
 func (w *WAV) AddAudioData(d []byte) {
 	// add audio data to existing data
 	if d != nil && len(d) > 0 {

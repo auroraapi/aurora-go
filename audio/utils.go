@@ -3,11 +3,11 @@ package audio
 import (
 	"encoding/binary"
 	"math"
-	
+
 	"github.com/gordonklaus/portaudio"
 )
 
-// rms is a helper function used to calculate the RMS. This is called 
+// rms is a helper function used to calculate the RMS. This is called
 // by TrimSilent which uses RMS to determine whether the sample of audio
 // is silent
 func rms(sampleSize int, audioData []byte) float64 {
@@ -17,9 +17,8 @@ func rms(sampleSize int, audioData []byte) float64 {
 		sum += float64(val * val)
 	}
 
-	return math.Sqrt(sum / (float64(len(audioData)/sampleSize)))
+	return math.Sqrt(sum / (float64(len(audioData) / sampleSize)))
 }
-
 
 // isSilent determines whether an audio slice is silent or not
 func isSilent(audio []int16) bool {
@@ -54,11 +53,11 @@ type recordResponse struct {
 // you can think of data as reinterpret_cast<char*>(int16array)
 func record(length float64, silenceLen float64) chan *recordResponse {
 	// we'll send the data in 2048-byte sized arrays. We'll allow buffering
-	// up to 1000 of these, so up to 1MB of buffering. This is so that the
+	// up to 1000 of these, so up to 2MB of buffering. This is so that the
 	// user doesn't cause stuttering audio if they can't consume the data fast
 	// enough.
 	ch := make(chan *recordResponse, 1000)
-	
+
 	// internal processing channel, works the same way as `ch`
 	prch := make(chan *recordResponse, 1000)
 
@@ -95,7 +94,7 @@ func record(length float64, silenceLen float64) chan *recordResponse {
 			}
 		}
 
-		// read data until the specified amount of silence or until the 
+		// read data until the specified amount of silence or until the
 		// specified amount of length
 		dataLen := 0
 		silentFor := 0.0

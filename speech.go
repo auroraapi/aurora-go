@@ -8,7 +8,7 @@ import (
 
 const (
 	// ListenDefaultLength is the default length of time (in seconds) to listen for.
-	ListenDefaultLength     = 0.0
+	ListenDefaultLength = 0.0
 	// ListenDefaultSilenceLen is the default amount of silence (in seconds)
 	// that the recording framework will allow before stoping.
 	ListenDefaultSilenceLen = 0.5
@@ -20,7 +20,7 @@ type ListenParams struct {
 	// Length specifies how long to listen for in seconds. A value of 0
 	// means that the recording framework will continue to listen until
 	// the specified amount of silence.
-	Length     float64
+	Length float64
 	// SilenceLen is how long of silence (in seconds) will be allowed before
 	// automatically stopping.
 	SilenceLen float64
@@ -47,7 +47,6 @@ type SpeechHandleFunc func(s *Speech, err error) bool
 // return a boolean that indicates whether or not to continue listening (true to
 // continue listening, false to stop listening).
 type TextHandleFunc func(t *Text, err error) bool
-
 
 // Speech represents a user's utterance. It has high-level methods that let
 // you operate on the speech (like convert it to text) and also allows you
@@ -123,14 +122,41 @@ func ContinuouslyListen(params *ListenParams, handleFunc SpeechHandleFunc) {
 	}
 }
 
-// ListenAndTranscribe calls 
+// ListenAndTranscribe starts listening with the given parameters (the same rules
+// apply to `ListenParams` as stated in `Listen`), except instead of waiting for
+// the audio to finish capturing and returning a Speech object, it directly streams
+// it to the API, transcribing it in real-time. When the transcription completes,
+// this function directly returns a Text object. This reduces latency by a
+// significant amount if you already know you want to transcribe the audio.
 func ListenAndTranscribe(params *ListenParams) (*Text, error) {
-	// TODO: this requires an additional API implementation that supports
-	// streaming audio, as well as obtaining an audio stream from the audio
-	// package itself.
-	return nil, nil
+	if params == nil {
+		params = NewListenParams()
+	}
+
+	// create a new recording stream and begin recording. Data will automatically
+	// be written to the stream as it becomes available, so we can directly call
+	// the API with this stream while audio is recording
+	stream := audio.NewRecordingStream(params.Length, params.SilenceLen)
+	response, err := api.GetSTTFromStream(Config, stream)
+	if err != nil {
+		return nil, err
+	}
+	return NewText(response.Transcript), nil
 }
 
+// ContinuouslyListenAndTranscribe is basically a combination of `ContinuouslyListen`
+// and `ListenAndTranscribe`. See the documentation for those two functions to
+// understand how it works. The difference is that this handler function receives
+// objects of type *Text instead of *Speech
 func ContinuouslyListenAndTranscribe(params *ListenParams, handleFunc TextHandleFunc) {
-	// TODO: this can be completed when ListenAndTranscribe is completed
+	if params == nil {
+		params = NewListenParams()
+	}
+
+	for {
+		t, err := ListenAndTranscribe(params)
+		if !handleFunc(t, err) {
+			break
+		}
+	}
 }

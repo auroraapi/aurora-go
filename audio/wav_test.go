@@ -4,10 +4,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"github.com/nkansal96/aurora-go/errors"
 	"github.com/nkansal96/aurora-go/audio"
 	"github.com/nkansal96/aurora-go/config"
+	"github.com/nkansal96/aurora-go/errors"
+	"github.com/stretchr/testify/require"
 )
 
 var apiErrorType *errors.APIError
@@ -27,8 +27,8 @@ func TestNewWAV(t *testing.T) {
 // TestMain sets up testing parameters and runs all tests
 func TestMain(m *testing.M) {
 	// set configuration from environment
-	c = &config.Config{ 
-		AppID: os.Getenv("APP_ID"),
+	c = &config.Config{
+		AppID:    os.Getenv("APP_ID"),
 		AppToken: os.Getenv("APP_TOKEN"),
 		DeviceID: os.Getenv("DEVICE_ID"),
 	}

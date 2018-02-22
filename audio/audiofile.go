@@ -1,6 +1,7 @@
 package audio
 
 import (
+	"bufio"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -33,7 +34,7 @@ func (f *File) WriteToFile(filename string) error {
 // is specified in seconds.
 func (f *File) Pad(seconds float64) {
 	// calculate number of bytes needed to pad given amount of seconds
-	bytes := float64(f.AudioData.NumChannels * f.AudioData.BitsPerSample/8) * float64(f.AudioData.SampleRate) * seconds
+	bytes := float64(f.AudioData.NumChannels*f.AudioData.BitsPerSample/8) * float64(f.AudioData.SampleRate) * seconds
 	padding := make([]byte, int(bytes))
 
 	// copy the WAV parameters, set initial data to the left padding
@@ -55,7 +56,7 @@ func (f *File) Pad(seconds float64) {
 // PadLeft adds silence to the beginning of the audio data
 func (f *File) PadLeft(seconds float64) {
 	// calculate number of bytes needed to pad given amount of seconds
-	bytes := float64(f.AudioData.NumChannels * f.AudioData.BitsPerSample/8) * float64(f.AudioData.SampleRate) * seconds
+	bytes := float64(f.AudioData.NumChannels*f.AudioData.BitsPerSample/8) * float64(f.AudioData.SampleRate) * seconds
 	padding := make([]byte, int(bytes))
 
 	// copy the WAV parameters, set initial data to the left padding
@@ -76,7 +77,7 @@ func (f *File) PadLeft(seconds float64) {
 //PadRight adds silence to the end of the audio data
 func (f *File) PadRight(seconds float64) {
 	// calculate number of bytes needed to pad given amount of seconds
-	bytes := float64(f.AudioData.NumChannels * f.AudioData.BitsPerSample/8) * float64(f.AudioData.SampleRate) * seconds
+	bytes := float64(f.AudioData.NumChannels*f.AudioData.BitsPerSample/8) * float64(f.AudioData.SampleRate) * seconds
 	padding := make([]byte, int(bytes))
 
 	// add the padding to the right
@@ -117,7 +118,7 @@ func (f *File) Play() error {
 	for i := 0; i < len(data); i += step {
 		// need to convert each 2-bytes in [i, i+step] to 1 little endian int16
 		for j := 0; j < bufLen; j++ {
-			k := j*2
+			k := j * 2
 			buf[j] = int16(binary.LittleEndian.Uint16(data[i+k : i+k+2]))
 		}
 		err := stream.Write()
@@ -127,6 +128,32 @@ func (f *File) Play() error {
 	}
 
 	return nil
+}
+
+// NewRecordingStream records audio data according to the given parameters (just
+// like `NewFileFromRecording`), however instead of creating an *audio.File, it
+// streams the data to a Reader, which can be read as soon as data is available.
+// It emits a WAV header before the actual data, but the length of the data is
+// not correct. Therefore, the resulting WAV should be read until EOF.
+func NewRecordingStream(length float64, silenceLen float64) io.Reader {
+	pr, pw := io.Pipe()
+	bufwr := bufio.NewWriterSize(pw, 2000*BufSize)
+	bufrd := bufio.NewReaderSize(pr, 2000*BufSize)
+
+	go func() {
+		header := NewWAV().Data()
+		bufwr.Write(header)
+
+		ch := record(length, silenceLen)
+		for d := range ch {
+			if d.Error != nil {
+				return
+			}
+			bufwr.Write(d.Data)
+		}
+	}()
+
+	return bufrd
 }
 
 // NewFromRecording creates a new File by recording from the default input stream.

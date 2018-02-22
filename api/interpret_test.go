@@ -1,8 +1,8 @@
 package api_test
 
 import (
-	"testing"
 	"os"
+	"testing"
 
 	"github.com/nkansal96/aurora-go/api"
 	"github.com/nkansal96/aurora-go/api/backend"
@@ -15,7 +15,7 @@ var apiErrorType *errors.APIError
 var c *config.Config
 
 func TestGetInterpretNoCredentials(t *testing.T) {
-	badConfig := &config.Config{ Backend: backend.NewAuroraBackend() }
+	badConfig := &config.Config{Backend: backend.NewAuroraBackend()}
 
 	_, err := api.GetInterpret(badConfig, "what is the weather in los angeles tomorrow")
 	require.NotNil(t, err)
@@ -40,11 +40,11 @@ func TestGetInterpret(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	// set configuration from environment
-	c = &config.Config{ 
-		AppID: os.Getenv("APP_ID"),
+	c = &config.Config{
+		AppID:    os.Getenv("APP_ID"),
 		AppToken: os.Getenv("APP_TOKEN"),
 		DeviceID: os.Getenv("DEVICE_ID"),
-		Backend: backend.NewAuroraBackend(),
+		Backend:  backend.NewAuroraBackend(),
 	}
 	if len(os.Getenv("API_HOST")) > 0 {
 		c.Backend.SetBaseURL(os.Getenv("API_HOST"))
