@@ -32,9 +32,17 @@ func isSilent(audio []int16) bool {
 	return max < SilentThresh
 }
 
+// recordResponse is a response emitted on the channel returns from the
+// record function.
 type recordResponse struct {
+	// Data contains the raw data converted from the n-bit sample that
+	// is read from PortAudio
 	Data []byte
+	// Samples contains the raw samples read from PortAudio (do not use --
+	// this is overwritten in every message sent on the channel. Its use
+	// is purely internal)
 	Samples []int16
+	// Error if an error occurred
 	Error error
 }
 
@@ -121,12 +129,9 @@ func record(length float64, silenceLen float64) chan *recordResponse {
 		// close the channel when we're done receiving all audio samples
 		defer close(ch)
 		for res := range prch {
-			// send audio to the user when we're done processing
-			// use a func to force dynamic scoping
-			defer func() { ch <- res }()
-
 			// check if port audio threw an error
 			if res.Error != nil {
+				ch <- res
 				return
 			}
 
@@ -134,10 +139,12 @@ func record(length float64, silenceLen float64) chan *recordResponse {
 			// are equivalent in little-endian form.
 			d := res.Samples
 			res.Data = make([]byte, 2*len(d))
-			for i := 0; i < len(d); i += 2 {
-				res.Data[i] = byte(d[i] & 0xFF)
-				res.Data[i+1] = byte((d[i] >> 8) & 0xFF)
+			for i, j := 0, 0; i < len(d); i, j = i+1, j+2 {
+				res.Data[j] = byte(d[i] & 0xFF)
+				res.Data[j+1] = byte((d[i] >> 8) & 0xFF)
 			}
+
+			ch <- res
 		}
 	}()
 
