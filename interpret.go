@@ -7,9 +7,9 @@ import (
 // Interpret contains the results from a call to the Aurora Interpret service.
 type Interpret struct {
 	// Intent represents the intent of the user. This can be an empty string if
-	// the intent of the user was unclear. Otherwise, it will be one of the 
+	// the intent of the user was unclear. Otherwise, it will be one of the
 	// pre-determined values listed in the Aurora dashboard.
-	Intent   string
+	Intent string
 	// Entities contain auxiliary information about the user's utterance. This
 	// can be an empty map if no such information was detected. Otherwise, it
 	// will be a key-value listing according to the entities described on the

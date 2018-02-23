@@ -98,11 +98,7 @@ func NewWAVFromParams(params *WAVParams) *WAV {
 // The buffer is broken up into its respective information and that
 // information is used to create the WAV format struct
 func NewWAVFromData(data []byte) (*WAV, error) {
-	// create a WAV from the given buffer.
-	// return error if len(data) < 44
-	// extract data from the data according to the spec: http://soundfile.sapp.org/doc/WaveFormat/
-
-	// find the end of subchunk2id
+	// find the end of subchunk2id (data)
 	i := 4
 	for i < len(data) && data[i-4] != 'd' || data[i-3] != 'a' || data[i-2] != 't' || data[i-1] != 'a' {
 		i++
@@ -149,12 +145,12 @@ func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 }
 
 // TrimSilent is called on a WAV struct to trim the silent portions from the
-// ends of the file while leaving a certain amount of padding. The padding input is 
-// specified in seconds. The threshold input is a decimal (between 0 and 1) and is 
+// ends of the file while leaving a certain amount of padding. The padding input is
+// specified in seconds. The threshold input is a decimal (between 0 and 1) and is
 // relative to the maximum amplitude of the waveform
 func (w *WAV) TrimSilent(threshold float64, padding float64) {
 	// sample size in bytes
-	sampleSize := int(w.BitsPerSample / 8)
+	sampleSize := int(w.NumChannels * w.BitsPerSample / 8)
 	// number of bytes to examine in each step
 	step := 1024
 
@@ -179,7 +175,7 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) {
 		sampleRMS := rms(sampleSize, w.audioData[N2-(sampleSize*step):N2])
 		if sampleRMS > silenceThresh {
 			break
-		} 
+		}
 		N2 -= sampleSize * step
 	}
 
@@ -187,7 +183,7 @@ func (w *WAV) TrimSilent(threshold float64, padding float64) {
 	w.audioData = w.audioData[N1-paddingSamples : N2+paddingSamples]
 }
 
-// AddAudioData adds the passed-in audio bytes to the WAV struct 
+// AddAudioData adds the passed-in audio bytes to the WAV struct
 func (w *WAV) AddAudioData(d []byte) {
 	// add audio data to existing data
 	if d != nil && len(d) > 0 {

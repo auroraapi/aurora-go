@@ -46,9 +46,6 @@ func TestTextInterpretMultipleEntities(t *testing.T) {
 	require.Equal(t, "tomorrow", i.Entities["time"])
 }
 
-
-
-
 // TestMain sets up testing parameters and runs all tests
 func TestMain(m *testing.M) {
 	// set configuration from environment

@@ -5,7 +5,7 @@ import (
 )
 
 // Text encapsulates some text, whether it is obtained from STT, a user input,
-// or generated programmatically, and allows high-level operations to be 
+// or generated programmatically, and allows high-level operations to be
 // conducted and chained on it (like converting to speech, or calling Interpret)
 type Text struct {
 	// Text is the actual text that this object encapsulates
