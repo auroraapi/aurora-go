@@ -12,12 +12,12 @@ import (
 // WAV-related constants.
 const (
 	// DefaultNumChannels is 1 (mono audio)
-	DefaultNumChannels = 1
-	DefaultSampleRate  = 16000
+	DefaultNumChannels uint16 = 1
+	DefaultSampleRate uint32 = 16000
 	// DefaultAudioFormat is 1 (raw, uncompressed PCM waveforms)
-	DefaultAudioFormat = 1
+	DefaultAudioFormat uint16 = 1
 	// DefaultBitsPerSample is 16 (2 bytes per sample).
-	DefaultBitsPerSample = 16
+	DefaultBitsPerSample uint16 = 16
 )
 
 // WAV represents a PCM audio file in the WAV container format. It keeps
@@ -65,8 +65,8 @@ func NewWAV() *WAV {
 }
 
 // NewWAVFromParams returns a new WAV file from the passed in parameters
-// If any of the parameters are 0, then it will be given the default
-// values
+// If any of the numerical parameters are 0, then it will be given the default
+// values.
 func NewWAVFromParams(params *WAVParams) *WAV {
 	// create a WAV from the given params
 	// use defaults from previous function if any value is 0
