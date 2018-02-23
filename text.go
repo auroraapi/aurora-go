@@ -17,7 +17,7 @@ func NewText(text string) *Text {
 	return &Text{Text: text}
 }
 
-// Speech calls the Aurora STT service on the text encapulated in this object
+// Speech calls the Aurora TTS service on the text encapsulated in this object
 // and converts it to a `Speech` object. Further operations can then be done
 // on it, such as saving to file or speaking the resulting audio.
 func (t *Text) Speech() (*Speech, error) {
@@ -30,7 +30,7 @@ func (t *Text) Speech() (*Speech, error) {
 
 // Interpret calls the Aurora Interpret service on the text encapsulated in this
 // object and converts it to an `Interpret` object, which contains the results
-// from the APIcalls
+// from the API calls
 func (t *Text) Interpret() (*Interpret, error) {
 	response, err := api.GetInterpret(Config, t.Text)
 	if err != nil {

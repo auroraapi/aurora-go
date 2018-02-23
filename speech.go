@@ -87,7 +87,7 @@ func (t *Speech) Text() (*Text, error) {
 // To avoid having to do this, you should call `NewListenParams` to obtain an
 // instance of `ListenParams` with all of the default filled out, and then over-
 // ride them with the ones you want to change. Alternatively, you can pass `nil`
-// to simply use the default paramters. Currently, this function uses the
+// to simply use the default parameters. Currently, this function uses the
 // default audio input interface (an option to change this will be available)
 // at a later time.
 func Listen(params *ListenParams) (*Speech, error) {
