@@ -1,10 +1,10 @@
 package audio_test
 
 import (
-	"os"
 	"bytes"
-	"testing"
 	"encoding/binary"
+	"os"
+	"testing"
 
 	"github.com/nkansal96/aurora-go/audio"
 	"github.com/nkansal96/aurora-go/config"
@@ -27,11 +27,11 @@ func TestNewWAV(t *testing.T) {
 	require.Equal(t, 0, len(audioData))
 }
 
-// If the WAVParams are specified, then the information should be 
+// If the WAVParams are specified, then the information should be
 // correctly written into the WAV struct
 func TestNewWAVFromParamsCustom(t *testing.T) {
 	emptyAudio := make([]byte, 0)
-	wav := audio.NewWAVFromParams(&audio.WAVParams{1,10000,8,emptyAudio})
+	wav := audio.NewWAVFromParams(&audio.WAVParams{1, 10000, 8, emptyAudio})
 	require.Equal(t, uint16(1), wav.NumChannels)
 	require.Equal(t, uint32(10000), wav.SampleRate)
 	require.Equal(t, uint16(8), wav.BitsPerSample)
@@ -42,7 +42,7 @@ func TestNewWAVFromParamsCustom(t *testing.T) {
 // parameters specified in the wav.go file will be given
 func TestNewWAVFromParamsNotSpecified(t *testing.T) {
 	emptyAudio := make([]byte, 0)
-	wav := audio.NewWAVFromParams(&audio.WAVParams{1,0,16,emptyAudio})
+	wav := audio.NewWAVFromParams(&audio.WAVParams{1, 0, 16, emptyAudio})
 	require.Equal(t, uint16(1), wav.NumChannels)
 	require.Equal(t, uint32(16000), wav.SampleRate)
 	require.Equal(t, uint16(16), wav.BitsPerSample)
@@ -59,7 +59,6 @@ func TestNewWAVFromData(t *testing.T) {
 	require.Equal(t, uint16(16), wav.BitsPerSample)
 	require.Equal(t, 0, len(wav.AudioData()))
 }
-
 
 func TestNewWAVFromReader(t *testing.T) {
 	emptyWAVFile := testutils.CreateEmptyWAVFile()
@@ -94,7 +93,7 @@ func TestData(t *testing.T) {
 
 	wav, err := audio.NewWAVFromData(emptyWAVFile)
 	wav.AddAudioData(audioData)
-	dataBytes := wav.Data() 
+	dataBytes := wav.Data()
 
 	require.Nil(t, err)
 	require.Equal(t, []byte{0xff, 0xfd, 0x0, 0x0}, dataBytes[44:48])

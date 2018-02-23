@@ -13,7 +13,7 @@ import (
 const (
 	// DefaultNumChannels is 1 (mono audio)
 	DefaultNumChannels uint16 = 1
-	DefaultSampleRate uint32 = 16000
+	DefaultSampleRate  uint32 = 16000
 	// DefaultAudioFormat is 1 (raw, uncompressed PCM waveforms)
 	DefaultAudioFormat uint16 = 1
 	// DefaultBitsPerSample is 16 (2 bytes per sample).

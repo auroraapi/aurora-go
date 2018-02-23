@@ -26,11 +26,11 @@ func CreateEmptyWAVFile() []byte {
 	binary.LittleEndian.PutUint32(emptyWAVFile[28:32], 44100)
 	// block align ((bit size * channels) / 8)
 	binary.LittleEndian.PutUint16(emptyWAVFile[32:34], 1)
-	// bits per sample 
+	// bits per sample
 	binary.LittleEndian.PutUint16(emptyWAVFile[34:36], 16)
 	// "data" marker
 	binary.BigEndian.PutUint32(emptyWAVFile[36:40], 0x64617461)
-	// data size 
+	// data size
 	binary.LittleEndian.PutUint32(emptyWAVFile[40:44], 0)
 
 	return emptyWAVFile
