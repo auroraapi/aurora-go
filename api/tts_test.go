@@ -19,9 +19,16 @@ func TestGetTTSNoCredentials(t *testing.T) {
 	require.Subset(t, []string{"MissingApplicationID", "MissingApplicationToken"}, []string{err.(*errors.APIError).Code})
 }
 
-func TestGetTTStEmptyString(t *testing.T) {
+func TestGetTTSEmptyString(t *testing.T) {
 	_, err := api.GetTTS(c, "")
 	require.NotNil(t, err)
 	require.IsType(t, apiErrorType, err)
 	require.Subset(t, []string{"APIInvalidInput"}, []string{err.(*errors.APIError).Code})
+}
+
+func TestGetTTS(t *testing.T) {
+	r, err := api.GetTTS(c, "what time is it in los angeles")
+	require.Nil(t, err)
+	require.NotNil(t, r)
+	require.IsType(t, audioFileType, r)
 }

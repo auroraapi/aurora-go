@@ -4,15 +4,17 @@ import (
 	"os"
 	"testing"
 
-	// "github.com/nkansal96/aurora-go/api"
+	"github.com/nkansal96/aurora-go/api"
 	"github.com/nkansal96/aurora-go/api/backend"
+	"github.com/nkansal96/aurora-go/audio"
 	"github.com/nkansal96/aurora-go/config"
 	"github.com/nkansal96/aurora-go/errors"
-	// "github.com/stretchr/testify/require"
 )
 
 var apiErrorType *errors.APIError
 var c *config.Config
+var audioFileType *audio.File
+var STTResponseType *api.STTResponse
 
 func TestMain(m *testing.M) {
 	// set configuration from environment
