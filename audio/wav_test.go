@@ -42,10 +42,10 @@ func TestNewWAVFromParamsCustom(t *testing.T) {
 // parameters specified in the wav.go file will be given
 func TestNewWAVFromParamsNotSpecified(t *testing.T) {
 	emptyAudio := make([]byte, 0)
-	wav := audio.NewWAVFromParams(&audio.WAVParams{1, 0, 16, emptyAudio})
-	require.Equal(t, uint16(1), wav.NumChannels)
-	require.Equal(t, uint32(16000), wav.SampleRate)
-	require.Equal(t, uint16(16), wav.BitsPerSample)
+	wav := audio.NewWAVFromParams(&audio.WAVParams{1,0,16,emptyAudio})
+	require.Equal(t, audio.DefaultNumChannels, wav.NumChannels)
+	require.Equal(t, audio.DefaultSampleRate, wav.SampleRate)
+	require.Equal(t, audio.DefaultBitsPerSample, wav.BitsPerSample)
 	require.Equal(t, 0, len(wav.AudioData()))
 }
 
@@ -75,8 +75,7 @@ func TestNewWAVFromReader(t *testing.T) {
 func TestAddAudioData(t *testing.T) {
 	emptyWAVFile := testutils.CreateEmptyWAVFile()
 
-	audioData := make([]byte, 4)
-	binary.LittleEndian.PutUint32(audioData, 0x0000fdff)
+	audioData := []byte{0xff, 0xfd, 0x00, 0x00}
 
 	wav, err := audio.NewWAVFromData(emptyWAVFile)
 	wav.AddAudioData(audioData)
