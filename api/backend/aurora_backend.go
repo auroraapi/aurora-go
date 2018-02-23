@@ -28,7 +28,7 @@ func NewAuroraBackend() Backend {
 	return &AuroraBackend{
 		BaseURL: baseURL,
 		client: &http.Client{
-			Timeout: 10 * time.Second,
+			Timeout: 60 * time.Second,
 		},
 	}
 }

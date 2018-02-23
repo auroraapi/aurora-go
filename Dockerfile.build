@@ -4,7 +4,7 @@ FROM golang:1.9-alpine
 # Set GOPATH and download dependencies
 ENV GOPATH /go
 ARG id_rsa
-RUN apk add -U git curl openssh build-base
+RUN apk add -U git curl openssh build-base portaudio portaudio-dev
 
 # Install go dependencies
 RUN mkdir -p ~/.ssh && \
