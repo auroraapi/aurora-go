@@ -42,7 +42,7 @@ func TestNewWAVFromParamsCustom(t *testing.T) {
 // parameters specified in the wav.go file will be given
 func TestNewWAVFromParamsNotSpecified(t *testing.T) {
 	emptyAudio := make([]byte, 0)
-	wav := audio.NewWAVFromParams(&audio.WAVParams{1,0,16,emptyAudio})
+	wav := audio.NewWAVFromParams(&audio.WAVParams{1, 0, 16, emptyAudio})
 	require.Equal(t, audio.DefaultNumChannels, wav.NumChannels)
 	require.Equal(t, audio.DefaultSampleRate, wav.SampleRate)
 	require.Equal(t, audio.DefaultBitsPerSample, wav.BitsPerSample)
