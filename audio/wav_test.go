@@ -9,6 +9,7 @@ import (
 	"github.com/nkansal96/aurora-go/audio"
 	"github.com/nkansal96/aurora-go/config"
 	"github.com/nkansal96/aurora-go/errors"
+	"github.com/nkansal96/aurora-go/testutils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,7 +50,7 @@ func TestNewWAVFromParamsNotSpecified(t *testing.T) {
 }
 
 func TestNewWAVFromData(t *testing.T) {
-	emptyWAVFile := createEmptyWAVFile()
+	emptyWAVFile := testutils.CreateEmptyWAVFile()
 
 	wav, err := audio.NewWAVFromData(emptyWAVFile)
 	require.Nil(t, err)
@@ -61,7 +62,7 @@ func TestNewWAVFromData(t *testing.T) {
 
 
 func TestNewWAVFromReader(t *testing.T) {
-	emptyWAVFile := createEmptyWAVFile()
+	emptyWAVFile := testutils.CreateEmptyWAVFile()
 	r := bytes.NewReader(emptyWAVFile)
 
 	wav, err := audio.NewWAVFromReader(r)
@@ -73,7 +74,7 @@ func TestNewWAVFromReader(t *testing.T) {
 }
 
 func TestAddAudioData(t *testing.T) {
-	emptyWAVFile := createEmptyWAVFile()
+	emptyWAVFile := testutils.CreateEmptyWAVFile()
 
 	audioData := make([]byte, 4)
 	binary.LittleEndian.PutUint32(audioData, 0x0000fdff)
@@ -86,7 +87,7 @@ func TestAddAudioData(t *testing.T) {
 }
 
 func TestData(t *testing.T) {
-	emptyWAVFile := createEmptyWAVFile()
+	emptyWAVFile := testutils.CreateEmptyWAVFile()
 
 	audioData := make([]byte, 4)
 	binary.LittleEndian.PutUint32(audioData, 0x0000fdff)
@@ -97,38 +98,6 @@ func TestData(t *testing.T) {
 
 	require.Nil(t, err)
 	require.Equal(t, []byte{0xff, 0xfd, 0x0, 0x0}, dataBytes[44:48])
-}
-
-func createEmptyWAVFile() []byte {
-	emptyWAVFile := make([]byte, 44)
-	// "RIFF" marker
-	binary.BigEndian.PutUint32(emptyWAVFile[0:4], 0x52494646)
-	// file size
-	binary.LittleEndian.PutUint32(emptyWAVFile[4:8], 0)
-	// "WAVE" type
-	binary.BigEndian.PutUint32(emptyWAVFile[8:12], 0x57415645)
-	// "fmt" section
-	binary.BigEndian.PutUint32(emptyWAVFile[12:16], 0x666d7420)
-	// length of fmt section
-	binary.LittleEndian.PutUint32(emptyWAVFile[16:20], 16)
-	// audio format
-	binary.LittleEndian.PutUint16(emptyWAVFile[20:22], 1)
-	// num channels
-	binary.LittleEndian.PutUint16(emptyWAVFile[22:24], 1)
-	// sample rate
-	binary.LittleEndian.PutUint32(emptyWAVFile[24:28], 44100)
-	// byte rate ((Sample Rate * Bit Size * Channels) / 8)
-	binary.LittleEndian.PutUint32(emptyWAVFile[28:32], 44100)
-	// block align ((bit size * channels) / 8)
-	binary.LittleEndian.PutUint16(emptyWAVFile[32:34], 1)
-	// bits per sample 
-	binary.LittleEndian.PutUint16(emptyWAVFile[34:36], 16)
-	// "data" marker
-	binary.BigEndian.PutUint32(emptyWAVFile[36:40], 0x64617461)
-	// data size 
-	binary.LittleEndian.PutUint32(emptyWAVFile[40:44], 0)
-
-	return emptyWAVFile
 }
 
 // TestMain sets up testing parameters and runs all tests
