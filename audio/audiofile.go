@@ -22,6 +22,9 @@ const (
 // File is an audio file
 type File struct {
 	AudioData *WAV
+
+	playing    bool
+	shouldStop bool
 }
 
 // Writes the audio data to a file
@@ -89,6 +92,12 @@ func (f *File) TrimSilence() {
 	f.AudioData.TrimSilent(0.03, 0.25)
 }
 
+func (f *File) Stop() {
+	if f.playing {
+		f.shouldStop = true
+	}
+}
+
 // Play the audio file to the default output
 func (f *File) Play() error {
 	// initialize the underlying APIs for audio transmission
@@ -110,16 +119,25 @@ func (f *File) Play() error {
 	defer stream.Stop()
 	stream.Start()
 
+	// get audio data (without WAV header)
 	data := f.AudioData.AudioData()
-	// this is multiplied by 2 because we need twice as many bytes to fill up
-	// an array of `bufLen` int16s.
-	step := bufLen * 2
+	step := bufLen * 2 // *2 since we need twice as many bytes to fill up `bufLen` in16s
+
+	f.playing = true
+	defer func() { f.playing = false }()
+
 	for i := 0; i < len(data); i += step {
+		// check if we should stop (user called f.Stop())
+		if f.shouldStop {
+			f.shouldStop = false
+			break
+		}
 		// need to convert each 2-bytes in [i, i+step] to 1 little endian int16
 		for j := 0; j < bufLen; j++ {
 			k := j * 2
 			buf[j] = int16(binary.LittleEndian.Uint16(data[i+k : i+k+2]))
 		}
+		// write the converted data into the stream
 		err := stream.Write()
 		if err != nil {
 			return err
@@ -189,7 +207,7 @@ func NewFileFromBytes(b []byte) (*File, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &File{wav}, err
+	return &File{wav, false, false}, err
 }
 
 //Creates a new Audio File from an io.Reader
