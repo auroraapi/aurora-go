@@ -16,3 +16,17 @@ type Error struct {
 func (e Error) Error() string {
 	return e.Message
 }
+
+func NewError(code string, message string) *Error {
+	return &Error{
+		Code:    code,
+		Message: message,
+	}
+}
+
+func NewFromErrorCode(code ErrorCode) *Error {
+	return &Error{
+		Code:    string(code),
+		Message: errorMessages[code],
+	}
+}

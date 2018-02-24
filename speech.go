@@ -68,10 +68,7 @@ func NewSpeech(newAudio *audio.File) *Speech {
 // to chain and combine using high-level abstractions.
 func (t *Speech) Text() (*Text, error) {
 	if t.Audio == nil {
-		return nil, errors.Error{
-			Code:    "One",
-			Message: "The audio file was nil. In order to convert a Speech object to Text, it must have a valid audio file. Usually, this means you created a Speech object that wasn't created using one of the Listen methods.",
-		}
+		return nil, errors.NewFromErrorCode(errors.SpeechNilAudio)
 	}
 
 	response, err := api.GetSTT(Config, t.Audio)
