@@ -11,23 +11,23 @@ The SDK is currently in a pre-alpha release phase. Bugs and limited functionalit
 
 **The Recommended Golang version is 1.9+**
 
-The Go SDK currently does not bundle the necessary system headers and binaries to interact with audio hardware in a cross-platform manner. For this reason, before using the SDK, you need to install `PortAudio`:
+The Go SDK currently does not bundle the necessary system headers and binaries to interact with audio hardware in a cross-platform manner. For this reason, before using the SDK, you need to install `PortAudio`. The Go binding we use needs to link the headers from PortAudio, so you'll also need `pkg-config`.
 
 ### macOS
 
 ```
-$ brew install portaudio
+$ brew install portaudio pkg-config
 $ go get -u github.com/nkansal96/aurora-go
 ```
 
 ### Linux
 
 ```
-$ sudo apt-get install libportaudio-dev
+$ sudo apt-get install libportaudio-dev pkg-config
 $ go get -u github.com/nkansal96/aurora-go
 ```
 
-This will install `PortAudio`. Use `yum` if your distribution uses `RPM`-based packages. If your distribution does not have `PortAudio` in its repository, install [PortAudio via source](http://www.portaudio.com/download.html).
+This will install `PortAudio` and `pkg-config`. Use `yum` if your distribution uses `RPM`-based packages. If your distribution does not have `PortAudio` in its repository, install [PortAudio via source](http://www.portaudio.com/download.html).
 
 
 ## Basic Usage
@@ -36,101 +36,314 @@ First, make sure you have an account with [Aurora](http://dashboard.auroraapi.co
 
 ### Text to Speech (TTS)
 
-```python
-# Import the package
-import auroraapi as aurora
+```go
+package main
 
-# Set your application settings
-aurora.set_app_id("YOUR_APP_ID")       # put your app ID here
-aurora.set_app_token("YOUR_APP_TOKEN") # put your app token here
+import (
+  "github.com/nkansal96/aurora-go"
+)
 
-# query the TTS service
-speech = aurora.Text("Hello world").to_speech()
+func main() {
+  // Set your application settings
+  aurora.Config.AppID = "YOUR_APP_ID"
+  aurora.Config.AppToken = "YOUR_APP_TOKEN"
+  aurora.Config.DeviceID = "YOUR_DEVICE_ID"
 
-# play the resulting audio
-speech.audio.play()
+  // Create a Text object and query the TTS service
+  speech, err := aurora.NewText("Hello world").Speech()
+  if err != nil {
+    return
+  }
 
-# or save it to a file
-speech.audio.write_to_file("test.wav")
+  // Play the resulting audio...
+  speech.Audio.Play()
+
+  // ...or save it into a file
+  speech.Audio.WriteToFile("test.wav")
+}
 ```
 
 ### Speech to Text (STT)
 
 #### Convert a WAV file to Speech
 
-```python
-# Import the package
-import auroraapi as aurora
+```go
+package main
 
-# Set your application settings
-aurora.set_app_id("YOUR_APP_ID")       # put your app ID here
-aurora.set_app_token("YOUR_APP_TOKEN") # put your app token here
+import (
+  "fmt"
+  "github.com/nkansal96/aurora-go"
+  "github.com/nkansal96/aurora-go/audio"
+)
 
-# load a WAV file
-a = aurora.audio.AudioFile.create_from_filename("test.wav")
+func main() {
+  // Set your application settings
+  aurora.Config.AppID = "YOUR_APP_ID"
+  aurora.Config.AppToken = "YOUR_APP_TOKEN"
+  aurora.Config.DeviceID = "YOUR_DEVICE_ID"
 
-# or open an already-open file
-# with open("test.wav", "rb") as f:
-#   a = aurora.audio.AudioFile.create_from_file(f)
+  // Load a WAV file
+  audio, err := audio.NewFileFromFileName("test.wav")
+  if err != nil {
+    return
+  }
 
-p = aurora.Speech(a).to_text()
-print(p.text) # 'hello world'
+  speech := aurora.NewSpeech(audio)
+  text, err := speech.Text()
+  if err != nil {
+    return
+  }
+
+  fmt.Printf("Transcribed: %s\n", text.Text)
+}
 ```
 
 #### Convert a previous Text API call to Speech
-```python
-# Call the TTS API to convert "Hello world" to speech
-speech = aurora.Text("Hello world").to_speech()
+```go
+package main
 
-# Previous API returned a Speech object, so we can just call
-# the to_text() method to get a prediction
-p = speech.to_text()
-print(p.text) # 'hello world'
+import (
+  "fmt"
+  "github.com/nkansal96/aurora-go"
+)
+
+func main() {
+  // Set your application settings
+  aurora.Config.AppID = "YOUR_APP_ID"
+  aurora.Config.AppToken = "YOUR_APP_TOKEN"
+  aurora.Config.DeviceID = "YOUR_DEVICE_ID"
+
+  // Call the TTS API to convert "Hello world" to speech
+  speech, err := aurora.NewText("Hello world").Speech()
+  if err != nil {
+    return
+  }
+
+  // Convert the generated speech back to text
+  text, err := speech.Text()
+  if err != nil {
+    return
+  }
+
+  fmt.Println(text.Text) // "hello world"
+}
 ```
 
 #### Listen for a specified amount of time
-```python
-# Listen for 3 seconds (silence is automatically trimmed)
-speech = aurora.Speech.listen(length=3)
+```go
+package main
 
-# Convert to text
-p = speech.to_text()
-print(p.text) # prints the prediction
+import (
+  "fmt"
+  "github.com/nkansal96/aurora-go"
+)
+
+func main() {
+  // Set your application settings
+  aurora.Config.AppID = "YOUR_APP_ID"
+  aurora.Config.AppToken = "YOUR_APP_TOKEN"
+  aurora.Config.DeviceID = "YOUR_DEVICE_ID"
+
+  // Create listen parameters. You should call this method so that the default
+  // values get set. Then override them with whatever you want
+  params := aurora.NewListenParams()
+  params.Length = 3.0
+
+  // Listen for 3 seconds
+  speech, err := aurora.Listen(params)
+  if err != nil {
+    return
+  }
+
+  // Convert the recorded speech to text
+  text, err := speech.Text()
+  if err != nil {
+    return
+  }
+
+  fmt.Println(text.Text)
+}
 ```
 
 #### Listen for an unspecified amount of time
 
-Calling this API will start listening and will automatically stop listening after a certain amount of silence (default is 1.0 seconds).
-```python
-# Start listening until 1.0s of silence
-speech = aurora.Speech.listen()
-# Or specify your own silence timeout (0.5 seconds shown here)
-# speech = aurora.Speech.listen(silence_len=0.5)
+Calling this API will start listening and will automatically stop listening after a certain amount of silence (default is 0.5 seconds).
+```go
+package main
 
-# Convert to text
-p = speech.to_text()
-print(p.text) # prints the prediction
+import (
+  "fmt"
+  "github.com/nkansal96/aurora-go"
+)
+
+func main() {
+  // Set your application settings
+  aurora.Config.AppID = "YOUR_APP_ID"
+  aurora.Config.AppToken = "YOUR_APP_TOKEN"
+  aurora.Config.DeviceID = "YOUR_DEVICE_ID"
+
+  // Create listen parameters. You should call this method so that the default
+  // values get set. Then override them with whatever you want
+  params := aurora.NewListenParams()
+  params.SilenceLen = 1.0
+
+  // Listen until 1 second of silence
+  speech, err := aurora.Listen(params)
+  if err != nil {
+    return
+  }
+
+  // Convert the recorded speech to text
+  text, err := speech.Text()
+  if err != nil {
+    return
+  }
+
+  fmt.Println(text.Text)
+}
 ```
 
 #### Continuously listen
 
-Continuously listen and retrieve speech segments. Note: you can do anything with these speech segments, but here we'll convert them to text. Just like the previous example, these segments are demarcated by silence (1.0 second by default) and can be changed by passing the `silence_len` parameter. Additionally, you can make these segments fixed length (as in the example before the previous) by setting the `length` parameter.
+Continuously listen and retrieve speech segments. Note: you can do anything with these speech segments, but here we'll convert them to text. Just like the previous example, these segments are demarcated by silence (0.5 seconds by default) and can be changed by setting the `SilenceLen` parameter. Additionally, you can make these segments fixed length (as in the example before the previous) by setting the `Length` parameter.
 
-```python
-# Continuously listen and convert to speech (blocking example)
-for speech in aurora.Speech.continuously_listen():
-	p = speech.to_text()
-	print(p.text)
+```go
+package main
 
-# Reduce the amount of silence in between speech segments
-for speech in aurora.Speech.continuously_listen(silence_len=0.5):
-	p = speech.to_text()
-	print(p.text)
+import (
+  "fmt"
+  "github.com/nkansal96/aurora-go"
+)
 
-# Fixed-length speech segments of 3 seconds
-for speech in aurora.Speech.continuously_listen(length=3.0):
-	p = speech.to_text()
-	print(p.text)
+// this callback is passed to ContinuouslyListen. It is called every time a
+// Speech object is available. The return value specifies whether or not we
+// should continue to listen (true if so, false otherwise)
+func listenCallback(s *aurora.Speech, err error) bool {
+  if err != nil {
+    // returning false in this function will stop listening
+    // and quit ContinuouslyListen
+    return false
+  }
+
+  // convert detected speech to text
+  text, err := s.Text()
+  if err != nil {
+    return false
+  }
+
+  fmt.Println(text.Text)
+
+  // Continue listening
+  return true
+}
+
+func main() {
+  // Set your application settings
+  aurora.Config.AppID = "YOUR_APP_ID"
+  aurora.Config.AppToken = "YOUR_APP_TOKEN"
+  aurora.Config.DeviceID = "YOUR_DEVICE_ID"
+
+  // Create listen parameters. You should call this method so that the default
+  // values get set. Then override them with whatever you want
+  params := aurora.NewListenParams()
+
+  // Continuously listen and convert to speech (blocks) with default params
+  aurora.ContinuouslyListen(params, listenCallback)
+
+  // Reduce the amount of silence in between speech segments
+  params.SilenceLen = 0.5
+  aurora.ContinuouslyListen(params, listenCallback)
+
+  // Fixed-length speech segments of 3 seconds (overrides SilenceLen parameter)
+  params.Length = 3.0
+  aurora.ContinuouslyListen(params, listenCallback)
+}
+```
+
+#### Listen and Transcribe
+
+If you already know that you wanted the recorded speech to be converted to text, you can do it in one step, reducing the amount of code you need to write and also reducing latency. Using the `ListenAndTranscribe` method, the audio that is recorded automatically starts uploading as soon as you call the method and transcription begins. When the audio recording ends, you get back the final transcription.
+
+```go
+package main
+
+import (
+  "fmt"
+  "github.com/nkansal96/aurora-go"
+)
+
+// this callback is passed to ContinuouslyListenAndTranscribe. It is called
+// every time a Text object is available. The return value specifies whether
+// or not we should continue to listen (true if so, false otherwise)
+func listenCallback(t *aurora.Text, err error) bool {
+  if err != nil {
+    // returning false in this function will stop listening
+    // and quit ContinuouslyListen
+    return false
+  }
+
+  // Print and continue listening
+  fmt.Println(t.Text)
+  return true
+}
+
+func main() {
+  // Set your application settings
+  aurora.Config.AppID = "YOUR_APP_ID"
+  aurora.Config.AppToken = "YOUR_APP_TOKEN"
+  aurora.Config.DeviceID = "YOUR_DEVICE_ID"
+
+  // Create listen parameters. You should call this method so that the default
+  // values get set. Then override them with whatever you want
+  params := aurora.NewListenParams()
+
+  // Listen and transcribe once
+  t, err := aurora.ListenAndTranscribe(params)
+  listenCallback(t, err)
+
+  // Continuously listen. while recording, this method also streams the data
+  // to the backend. Once recording is finished, a transcript is almost
+  // instantly available. The callback here receives an *aurora.Text (as opposed
+  // to the *aurora.Speech object in regular ContinuouslyListen).
+  aurora.ContinuouslyListenAndTranscribe(params, listenCallback)
+}
+```
+
+#### Listen and echo example
+
+```go
+package main
+
+import (
+  "fmt"
+  "github.com/nkansal96/aurora-go"
+)
+
+func listenCallback(t *aurora.Text, err error) bool {
+  if err != nil {
+    return false
+  }
+
+  // Perform STT on the transcribed text
+  s, err := t.Speech()
+  if err != nil {
+    return false
+  }
+
+  // Speak and continue listening
+  s.Audio.Play()
+  return true
+}
+
+func main() {
+  // Set your application settings
+  aurora.Config.AppID = "YOUR_APP_ID"
+  aurora.Config.AppToken = "YOUR_APP_TOKEN"
+  aurora.Config.DeviceID = "YOUR_DEVICE_ID"
+
+  params := aurora.NewListenParams()
+  aurora.ContinuouslyListenAndTranscribe(params, listenCallback)
+}
 ```
 
 ### Interpret (Language Understanding)
@@ -139,50 +352,119 @@ The interpret service allows you to take any Aurora `Text` object and understand
 
 #### Basic example
 
-```python
-# create a Text object
-text = aurora.Text("what is the time in los angeles")
+```go
+package main
 
-# call the interpret service. This returns an `Interpret` object.
-i = text.interpret()
+import (
+  "fmt"
+  "github.com/nkansal96/aurora-go"
+)
 
-# get the user's intent
-print(i.intent)   # time
+func main() {
+  // Set your application settings
+  aurora.Config.AppID = "YOUR_APP_ID"
+  aurora.Config.AppToken = "YOUR_APP_TOKEN"
+  aurora.Config.DeviceID = "YOUR_DEVICE_ID"
 
-# get any additional information
-print(i.entities) # { "location": "los angeles" }
+  // Create a Text object
+  text := aurora.NewText("What is the time in Los Angeles?")
+
+  // Call the interpret service
+  i, err := text.Interpret()
+  if err != nil {
+    return
+  }
+
+  // Print the detected intent (string) and entities (map[string]string)
+  fmt.Printf("Intent:   %s\nEntities: %v\n", i.Intent, i.Entities)
+
+  // This should print:
+  // Intent:   time
+  // Entities: map[location: los angeles]
+}
 ```
 
 #### User query example
 
-```python
-while True:
-	# Repeatedly ask the user to enter a command
-	user_text = raw_input("Enter a command:")
-	if user_text == "quit":
-		break
-	
-	# Interpret and print the results
-	i = aurora.Text(user_text).interpret()
-	print(i.intent, i.entities)
+```go
+package main
+
+import (
+  "bufio"
+  "fmt"
+  "os"
+  "github.com/nkansal96/aurora-go"
+)
+
+func main() {
+  // Set your application settings
+  aurora.Config.AppID = "YOUR_APP_ID"
+  aurora.Config.AppToken = "YOUR_APP_TOKEN"
+  aurora.Config.DeviceID = "YOUR_DEVICE_ID"
+
+  // Read line-by-line from stdin
+  r := bufio.NewReader(os.Stdin)
+  for {
+    t, _ := r.ReadString('\n')
+
+    // Interpret what the user type
+    i, err := aurora.NewText(t).Interpret()
+    if err != nil {
+      break
+    }
+
+    // Print out the intent and entities
+    fmt.Printf("%s %v\n", i.Intent, i.Entities)
+  }
+}
 ```
 
 #### Smart Lamp
 
 This example shows how easy it is to voice-enable a smart lamp. It responds to queries in the form of "turn on the lights" or "turn off the lamp". You define what `object` you're listening for (so that you can ignore queries like "turn on the music").
 
-```python
-valid_words = ["light", "lights", "lamp"]
-valid_entities = lambda d: "object" in d and d["object"] in valid_words
+```go
+package main
 
-for speech in aurora.Speech.continuously_listen(silence_len=0.5):
-	i = speech.to_text().interpret()
-	if i.intent == "turn_on" and valid_entities(i.entities):
-		# do something to actually turn on the lamp
-		print("Turning on the lamp")
-	elif i.intent == "turn_off" and valid_entities(i.entities):
-		# do something to actually turn off the lamp
-		print("Turning off the lamp")
+import (
+  "github.com/nkansal96/aurora-go"
+)
+
+// handle what the user said
+func listenCallback(t *aurora.Text, err error) bool {
+  if err != nil {
+    return true
+  }
+  i, err := t.Interpret()
+  if err != nil {
+    return true
+  }
+
+  intent := i.Intent
+  object := i.Entities["object"]
+  validWords := []string{ "light", "lights", "lamp" }
+
+  for _, word := range validWords {
+    if object == word {
+      if intent == "turn_on" {
+        // turn on the lamp
+      } else if intent == "turn_off" {
+        // turn off the lamp
+      }
+
+      break
+    }
+  }
+  return true
+}
+
+func main() {
+  // Set your application settings
+  aurora.Config.AppID = "YOUR_APP_ID"
+  aurora.Config.AppToken = "YOUR_APP_TOKEN"
+  aurora.Config.DeviceID = "YOUR_DEVICE_ID"
+
+  params := aurora.NewListenParams()
+  aurora.ContinuouslyListenAndTranscribe(params, listenCallback)
+}
 ```
-
-
