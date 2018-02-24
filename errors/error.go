@@ -17,10 +17,11 @@ func (e Error) Error() string {
 	return e.Message
 }
 
-func NewError(code string, message string) *Error {
+func NewError(code string, message string, info string) *Error {
 	return &Error{
 		Code:    code,
 		Message: message,
+		Info:    info,
 	}
 }
 
@@ -28,5 +29,13 @@ func NewFromErrorCode(code ErrorCode) *Error {
 	return &Error{
 		Code:    string(code),
 		Message: errorMessages[code],
+	}
+}
+
+func NewFromErrorCodeInfo(code ErrorCode, info string) *Error {
+	return &Error{
+		Code:    string(code),
+		Message: errorMessages[code],
+		Info:    info,
 	}
 }
