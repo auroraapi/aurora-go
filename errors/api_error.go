@@ -21,6 +21,7 @@ type APIError struct {
 	Info string `json:"-"`
 }
 
+// Error converts the error to a human-readable, string format.
 func (e APIError) Error() string {
 	return e.Message
 }

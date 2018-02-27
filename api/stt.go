@@ -11,19 +11,19 @@ import (
 )
 
 // STTResponse is the response returned by the API if the speech was
-// successfully able to be transcribed
+// successfully able to be transcribed.
 type STTResponse struct {
 	Transcript string `json:"transcript"`
 }
 
 // GetSTT queries the API with the provided audio file and returns
-// a transcript of the speech
+// a transcript of the speech.
 func GetSTT(c *config.Config, audio *audio.File) (*STTResponse, error) {
 	return GetSTTFromStream(c, bytes.NewReader(audio.WAVData()))
 }
 
-// GetSTTFromStream queries the API with the provided raw WAV audio stram
-// and returns a transcript of the speech
+// GetSTTFromStream queries the API with the provided raw WAV audio stream
+// and returns a transcript of the speech.
 func GetSTTFromStream(c *config.Config, audio io.Reader) (*STTResponse, error) {
 	params := &backend.CallParams{
 		Credentials: c.GetCredentials(),

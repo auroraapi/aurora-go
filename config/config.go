@@ -1,3 +1,5 @@
+// Package config contains configuration information that is used by the
+// rest of the SDK.
 package config
 
 import (
@@ -20,13 +22,13 @@ type Config struct {
 }
 
 // GetCredentials converts the client's credentials into a struct
-// that gets passed into the backend
+// that gets passed into the backend.
 func (c *Config) GetCredentials() *backend.Credentials {
 	return &backend.Credentials{c.AppID, c.AppToken, c.DeviceID}
 }
 
 // C is an instance of the above config (with default values). It's exported
-// so that all packages can use it
+// so that all packages can use it.
 var C = &Config{
 	Backend: backend.NewAuroraBackend(),
 }
