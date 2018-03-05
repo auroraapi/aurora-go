@@ -97,6 +97,8 @@ func NewWAVFromParams(params *WAVParams) *WAV {
 // NewWAVFromData creates a WAV format struct from the given data buffer
 // The buffer is broken up into its respective information and that
 // information is used to create the WAV format struct
+
+// TODO: should be checking the checksum and things like that to make sure it isn't corrupt
 func NewWAVFromData(data []byte) (*WAV, error) {
 	// find the end of subchunk2id (data)
 	i := 4
@@ -106,10 +108,7 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 
 	dataLen := len(data) - i
 	if dataLen <= 0 {
-		return nil, errors.Error{
-			Code:    "One",
-			Message: "Received WAV file with empty data",
-		}
+		return nil, errors.NewFromErrorCode(errors.WAVCorruptFile)
 	}
 
 	// hOff is the header offset. Even though the header length is actually

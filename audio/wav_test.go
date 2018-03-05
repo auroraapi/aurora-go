@@ -16,6 +16,9 @@ import (
 var apiErrorType *errors.APIError
 var c *config.Config
 
+// This test checks that if the NewWAV function is called, a correctly 
+// formatted struct is created with the default parameters 
+// as specified by the constants in the aduio package
 func TestNewWAV(t *testing.T) {
 	wav := audio.NewWAV()
 	require.Equal(t, audio.DefaultNumChannels, wav.NumChannels)
@@ -39,7 +42,7 @@ func TestNewWAVFromParamsCustom(t *testing.T) {
 }
 
 // If some of the WAVParams are specified to be 0, then the default
-// parameters specified in the wav.go file will be given
+// parameters specified in the wav.go file should be given
 func TestNewWAVFromParamsNotSpecified(t *testing.T) {
 	emptyAudio := make([]byte, 0)
 	wav := audio.NewWAVFromParams(&audio.WAVParams{1, 0, 16, emptyAudio})
@@ -49,6 +52,8 @@ func TestNewWAVFromParamsNotSpecified(t *testing.T) {
 	require.Equal(t, 0, len(wav.AudioData()))
 }
 
+// When given bytes of data, the information is properly parsed into a new
+// WAV struct
 func TestNewWAVFromData(t *testing.T) {
 	emptyWAVFile := testutils.CreateEmptyWAVFile()
 
@@ -60,6 +65,8 @@ func TestNewWAVFromData(t *testing.T) {
 	require.Equal(t, 0, len(wav.AudioData()))
 }
 
+// A new reader with bytes of data should be properly parsed into a new 
+// WAV struct
 func TestNewWAVFromReader(t *testing.T) {
 	emptyWAVFile := testutils.CreateEmptyWAVFile()
 	r := bytes.NewReader(emptyWAVFile)
@@ -72,6 +79,8 @@ func TestNewWAVFromReader(t *testing.T) {
 	require.Equal(t, 0, len(wav.AudioData()))
 }
 
+// If AddAudioData function is passed a set of bytes, the wav
+// structure should now contain the new data
 func TestAddAudioData(t *testing.T) {
 	emptyWAVFile := testutils.CreateEmptyWAVFile()
 
@@ -82,6 +91,20 @@ func TestAddAudioData(t *testing.T) {
 
 	require.Nil(t, err)
 	require.Equal(t, 4, len(wav.AudioData()))
+}
+
+// If AddAudioData function is called on an empty set of bytes, 
+// the wav structure should remain the same
+func TestAddAudioDataEmpty(t *testing.T) {
+	emptyWAVFile := testutils.CreateEmptyWAVFile()
+
+	audioData := make([]byte, 0)
+
+	wav, err := audio.NewWAVFromData(emptyWAVFile)
+	wav.AddAudioData(audioData)
+
+	require.Nil(t, err)
+	require.Equal(t, 0, len(wav.AudioData()))
 }
 
 func TestData(t *testing.T) {
