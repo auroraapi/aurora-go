@@ -15,14 +15,16 @@ const (
 )
 
 // ListenParams configures how the recording framework should listen for
-// speech. Right
+// speech.
 type ListenParams struct {
 	// Length specifies how long to listen for in seconds. A value of 0
 	// means that the recording framework will continue to listen until
-	// the specified amount of silence.
+	// the specified amount of silence. A value greater than 0 will
+	// override any value set to `SilenceLen`
 	Length float64
 	// SilenceLen is how long of silence (in seconds) will be allowed before
-	// automatically stopping.
+	// automatically stopping. This value is only taken into consideration if
+	// `Length` is 0
 	SilenceLen float64
 }
 
@@ -33,15 +35,15 @@ func NewListenParams() *ListenParams {
 	return &ListenParams{ListenDefaultLength, ListenDefaultSilenceLen}
 }
 
-// SpeechHandleFunc is the type of function that is passed to ContinuouslyListen.
+// SpeechHandleFunc is the type of function that is passed to `ContinuouslyListen`.
 // It is called every time a speech utterance is decoded and passed to the
 // function. If there was an error, that is passed as well. The function must
 // return a boolean that indicates whether or not to continue listening (true to
 // continue listening, false to stop listening).
 type SpeechHandleFunc func(s *Speech, err error) bool
 
-// SpeechHandleFunc is the type of function that is passed to
-// ContinuouslyListenAndTranscribe. It is called every time a speech utterance
+// TextHandleFunc is the type of function that is passed to
+// `ContinuouslyListenAndTranscribe`. It is called every time a speech utterance
 // is decoded and converted to text. The resulting text object is passed to the
 // function. If there was an error, that is passed as well. The function must
 // return a boolean that indicates whether or not to continue listening (true to
@@ -64,8 +66,8 @@ func NewSpeech(newAudio *audio.File) *Speech {
 }
 
 // Text calls the Aurora STT API and converts a user's utterance into
-// a text transcription. This is populated into a Text object, allowing you
-// to chain and combine using high-level abstractions.
+// a text transcription. This is populated into a `Text` object, allowing you
+// to chain and combine high-level abstractions.
 func (t *Speech) Text() (*Text, error) {
 	if t.Audio == nil {
 		return nil, errors.NewFromErrorCode(errors.SpeechNilAudio)
@@ -78,15 +80,18 @@ func (t *Speech) Text() (*Text, error) {
 	return NewText(response.Transcript), nil
 }
 
-// `Listen` take in `ListenParams` and generates a speech object based on those
-// parameters. Note that the `ListenParams` is expected to contain values for
+// `Listen` takes in `ListenParams` and generates a speech object based on those
+// parameters by recording from the default input device.
+//
+// Note that the `ListenParams` is expected to contain values for
 // every field, including defaults for fields that you did not want to change.
 // To avoid having to do this, you should call `NewListenParams` to obtain an
 // instance of `ListenParams` with all of the default filled out, and then over-
 // ride them with the ones you want to change. Alternatively, you can pass `nil`
-// to simply use the default parameters. Currently, this function uses the
-// default audio input interface (an option to change this will be available)
-// at a later time.
+// to simply use the default parameters.
+//
+// Currently, this function uses the default audio input interface (an option
+// to change this will be available at a later time).
 func Listen(params *ListenParams) (*Speech, error) {
 	if params == nil {
 		params = NewListenParams()
@@ -99,13 +104,18 @@ func Listen(params *ListenParams) (*Speech, error) {
 	return &Speech{Audio: audio}, nil
 }
 
-// ContinuouslyListen calls `Listen` continuously. That said, the same rules apply
-// to `ListenParams` as stated in `Listen`. This function also accepts another
-// function as an argument that is called every time a speech utterance is decoded.
-// A `Speech` object representing that utterance will be passed to the function.
-// If there was an error, that is passed as well. The function must return a boolean
-// that indicates whether or not to continue listening (true to continue listening,
-// false to stop listening).
+// ContinuouslyListen calls `Listen` continuously.
+
+// Note that the `ListenParams` is expected to contain values for every field,
+// including defaults for fields that you did not want to change. To avoid having
+// to do this, you should call `NewListenParams` to obtain an instance of
+// `ListenParams` with all of the default filled out, and then override them with
+// the ones you want to change. Alternatively, you can pass `nil` to simply use the
+// default parameters.
+
+// This function accepts another function as an argument that is called each time
+// a speech utterance is decoded. See the documentation for `SpeechHandleFunc`
+// for more information.
 func ContinuouslyListen(params *ListenParams, handleFunc SpeechHandleFunc) {
 	if params == nil {
 		params = NewListenParams()
@@ -119,12 +129,19 @@ func ContinuouslyListen(params *ListenParams, handleFunc SpeechHandleFunc) {
 	}
 }
 
-// ListenAndTranscribe starts listening with the given parameters (the same rules
-// apply to `ListenParams` as stated in `Listen`), except instead of waiting for
-// the audio to finish capturing and returning a Speech object, it directly streams
-// it to the API, transcribing it in real-time. When the transcription completes,
-// this function directly returns a Text object. This reduces latency by a
-// significant amount if you already know you want to transcribe the audio.
+// ListenAndTranscribe starts listening with the given parameters, except instead
+// of waiting for the audio to finish capturing and returning a Speech object,
+// it directly streams it to the API, transcribing it in real-time. When the
+// transcription completes, this function directly returns a Text object. This
+// reduces latency by a significant amount if you already know you want to
+// transcribe the audio.
+//
+// Note that the `ListenParams` is expected to contain values for every field,
+// including defaults for fields that you did not want to change. To avoid having
+// to do this, you should call `NewListenParams` to obtain an instance of
+// `ListenParams` with all of the default filled out, and then override them with
+// the ones you want to change. Alternatively, you can pass `nil` to simply use the
+// default parameters.
 func ListenAndTranscribe(params *ListenParams) (*Text, error) {
 	if params == nil {
 		params = NewListenParams()
@@ -141,10 +158,11 @@ func ListenAndTranscribe(params *ListenParams) (*Text, error) {
 	return NewText(response.Transcript), nil
 }
 
-// ContinuouslyListenAndTranscribe is basically a combination of `ContinuouslyListen`
+// ContinuouslyListenAndTranscribe is a combination of `ContinuouslyListen`
 // and `ListenAndTranscribe`. See the documentation for those two functions to
 // understand how it works. The difference is that this handler function receives
-// objects of type *Text instead of *Speech
+// objects of type *Text instead of *Speech. See the documentation for `TextHandleFunc`
+// for more information on that.
 func ContinuouslyListenAndTranscribe(params *ListenParams, handleFunc TextHandleFunc) {
 	if params == nil {
 		params = NewListenParams()

@@ -1,3 +1,4 @@
+// Package audio contains structs and functions to allow operating on audio data
 package audio
 
 import (
@@ -19,7 +20,9 @@ const (
 	NumChannels  = 1
 )
 
-// File is an audio file
+// File represents an audio file. It wraps the raw WAV data and allows you
+// to operate with it using high-level operations, such as padding, trimming,
+// playback, writing to file, recording, etc.
 type File struct {
 	AudioData *WAV
 
@@ -27,7 +30,7 @@ type File struct {
 	shouldStop bool
 }
 
-// Writes the audio data to a file
+// WriteToFile writes the audio data to a file.
 func (f *File) WriteToFile(filename string) error {
 	return ioutil.WriteFile(filename, f.AudioData.Data(), 0644)
 }
@@ -55,7 +58,7 @@ func (f *File) Pad(seconds float64) {
 	f.AudioData = newWav
 }
 
-// PadLeft adds silence to the beginning of the audio data
+// PadLeft adds silence to the beginning of the audio data.
 func (f *File) PadLeft(seconds float64) {
 	// calculate number of bytes needed to pad given amount of seconds
 	bytes := float64(f.AudioData.NumChannels*f.AudioData.BitsPerSample/8) * float64(f.AudioData.SampleRate) * seconds
@@ -76,7 +79,7 @@ func (f *File) PadLeft(seconds float64) {
 	f.AudioData = newWav
 }
 
-//PadRight adds silence to the end of the audio data
+// PadRight adds silence to the end of the audio data.
 func (f *File) PadRight(seconds float64) {
 	// calculate number of bytes needed to pad given amount of seconds
 	bytes := float64(f.AudioData.NumChannels*f.AudioData.BitsPerSample/8) * float64(f.AudioData.SampleRate) * seconds
@@ -86,12 +89,13 @@ func (f *File) PadRight(seconds float64) {
 	f.AudioData.AddAudioData(padding)
 }
 
-// TrimSilence trims silence from both ends of the audio data
+// TrimSilence trims silence from both ends of the audio data.
 func (f *File) TrimSilence() {
 	// TODO: calibrate constants
 	f.AudioData.TrimSilent(0.03, 0.25)
 }
 
+// Stop the audio playback immediately.
 func (f *File) Stop() {
 	if f.playing {
 		f.shouldStop = true
@@ -154,6 +158,8 @@ func (f *File) Play() error {
 // not correct. Therefore, the resulting WAV should be read until EOF.
 func NewRecordingStream(length float64, silenceLen float64) io.Reader {
 	pr, pw := io.Pipe()
+	// Create a large buffer so that we don't block recording if the
+	// consumption of this data is too slow.
 	bufwr := bufio.NewWriterSize(pw, 1000*BufSize)
 	bufrd := bufio.NewReaderSize(pr, 1000*BufSize)
 
@@ -176,10 +182,10 @@ func NewRecordingStream(length float64, silenceLen float64) io.Reader {
 	return bufrd
 }
 
-// NewFromRecording creates a new File by recording from the default input stream.
-// length specifies the maximum length of the recording in seconds. silenceLen
-// specifies how long in seconds to automatically stop after when consecutive
-// silence is detected.
+// NewFileFromRecording creates a new audio.File by recording from the default
+// input stream. `length` specifies the maximum length of the recording in
+// seconds. `silenceLen` specifies in seconds how much consecutive silence to
+// wait for before ending the recording.
 func NewFileFromRecording(length float64, silenceLen float64) (*File, error) {
 	ch := record(length, silenceLen)
 	audioData := make([]byte, 0)
@@ -201,7 +207,7 @@ func NewFileFromRecording(length float64, silenceLen float64) (*File, error) {
 	}, nil
 }
 
-//NewFromBytes creates a new Audio File from WAV data
+// NewFileFromBytes creates a new audio.File from WAV data
 func NewFileFromBytes(b []byte) (*File, error) {
 	wav, err := NewWAVFromData(b)
 	if err != nil {
@@ -210,7 +216,7 @@ func NewFileFromBytes(b []byte) (*File, error) {
 	return &File{wav, false, false}, err
 }
 
-//Creates a new Audio File from an io.Reader
+// NewFileFromReader creates a new audio.File from an io.Reader
 func NewFileFromReader(r io.Reader) (*File, error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -219,12 +225,12 @@ func NewFileFromReader(r io.Reader) (*File, error) {
 	return NewFileFromBytes(data)
 }
 
-//Creates a new Audio File from an os.File
+// NewFileFromFile creates a new audio.File from an os.File
 func NewFileFromFile(f *os.File) (*File, error) {
 	return NewFileFromReader(f)
 }
 
-//Creates a new Audio File from a given filename
+// NewFileFromFileName creates a new audio.File from the given filename
 func NewFileFromFileName(f string) (*File, error) {
 	data, err := ioutil.ReadFile(f)
 	if err != nil {
@@ -233,7 +239,8 @@ func NewFileFromFileName(f string) (*File, error) {
 	return NewFileFromBytes(data)
 }
 
-//Returns the wav data contained in the audio file
+// WAVData returns the wav data (header + audio data) contained in the
+// audio file
 func (f *File) WAVData() []byte {
 	return f.AudioData.Data()
 }

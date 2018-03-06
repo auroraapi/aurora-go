@@ -13,7 +13,8 @@ import (
 const (
 	// DefaultNumChannels is 1 (mono audio)
 	DefaultNumChannels uint16 = 1
-	DefaultSampleRate  uint32 = 16000
+	// DefaultSampleRate is 16KHz
+	DefaultSampleRate uint32 = 16000
 	// DefaultAudioFormat is 1 (raw, uncompressed PCM waveforms)
 	DefaultAudioFormat uint16 = 1
 	// DefaultBitsPerSample is 16 (2 bytes per sample).
@@ -52,8 +53,7 @@ type WAVParams struct {
 	AudioData     []byte
 }
 
-// NewWAV returns a new WAV file from the default parameters. It will never
-// return an error.
+// NewWAV returns a new, empty WAV file using the default parameters.
 func NewWAV() *WAV {
 	// create a new default WAV
 	return &WAV{
@@ -66,11 +66,8 @@ func NewWAV() *WAV {
 }
 
 // NewWAVFromParams returns a new WAV file from the passed in parameters
-// If any of the numerical parameters are 0, then it will be given the default
-// values.
+// If any of the parameters are 0, it will be given the default value.
 func NewWAVFromParams(params *WAVParams) *WAV {
-	// create a WAV from the given params
-	// use defaults from previous function if any value is 0
 	if params == nil {
 		return NewWAV()
 	}
@@ -97,9 +94,6 @@ func NewWAVFromParams(params *WAVParams) *WAV {
 
 // NewWAVFromData creates a WAV format struct from the given data buffer
 // The buffer is broken up into its respective information and that
-// information is used to create the WAV format struct
-
-// TODO: should be checking the checksum and things like that to make sure it isn't corrupt
 func NewWAVFromData(data []byte) (*WAV, error) {
 	// find the end of ChunkID denoted by RIFF 
 	// This marks the beginning of the WAV file
@@ -154,8 +148,7 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 	}, nil
 }
 
-// NewWAVFromReader takes in a reader and creates a new WAV format
-// with the given information.
+// NewWAVFromReader takes in a reader and creates a new WAV file.
 func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
@@ -217,7 +210,7 @@ func (w *WAV) AudioData() []byte {
 }
 
 // Data creates the header and data based on the WAV struct and returns
-// a fully formatted WAV file format
+// a fully formatted WAV file
 func (w *WAV) Data() []byte {
 	// find first data index
 	dataLen := len(w.audioData)

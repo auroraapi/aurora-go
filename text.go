@@ -6,13 +6,13 @@ import (
 
 // Text encapsulates some text, whether it is obtained from STT, a user input,
 // or generated programmatically, and allows high-level operations to be
-// conducted and chained on it (like converting to speech, or calling Interpret)
+// conducted and chained on it (like converting to speech, or calling Interpret).
 type Text struct {
 	// Text is the actual text that this object encapsulates
 	Text string
 }
 
-// NewText creates a Text object from the given text
+// NewText creates a Text object from the given text.
 func NewText(text string) *Text {
 	return &Text{Text: text}
 }
@@ -30,7 +30,7 @@ func (t *Text) Speech() (*Speech, error) {
 
 // Interpret calls the Aurora Interpret service on the text encapsulated in this
 // object and converts it to an `Interpret` object, which contains the results
-// from the API calls
+// from the API call.
 func (t *Text) Interpret() (*Interpret, error) {
 	response, err := api.GetInterpret(Config, t.Text)
 	if err != nil {
