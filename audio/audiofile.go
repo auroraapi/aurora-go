@@ -118,7 +118,6 @@ func (f *File) Play() error {
 	if err != nil {
 		return errors.NewFromErrorCodeInfo(errors.AudioFileNilStream, err.Error());
 	}
-
 	defer stream.Close()
 	defer stream.Stop()
 	stream.Start()
@@ -144,7 +143,7 @@ func (f *File) Play() error {
 		// write the converted data into the stream
 		err := stream.Write()
 		if err != nil {
-			return errors.NewFromErrorCodeInfo(errors.AudioFileNilStream, err.Error());
+			return errors.NewFromErrorCodeInfo(errors.AudioFileNotWritableStream, err.Error());
 		}
 	}
 

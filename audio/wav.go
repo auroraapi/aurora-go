@@ -104,7 +104,7 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 
 	dataLen := len(data) - i
 	if dataLen <= 0 {
-		return nil, errors.NewFromErrorCode(errors.WAVCorruptFile)
+		return nil, errors.NewFromErrorCodeInfo(errors.WAVCorruptFile, "The letters `RIFF` should exist from bytes 0 to 3 in big endian form from the start of the header to indicate that it is a RIFF header.")
 	}
 
 	// hOff is the header offset. Even though the header length is actually
@@ -119,17 +119,17 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 
 	// Verifies that "WAVE" letters exist in big endian form
 	if (data[hOff+8] != 'W' || data[hOff+9] != 'A' || data[hOff+10] != 'V' || data[hOff+11] != 'E') {
-		return nil, errors.NewFromErrorCode(errors.WAVCorruptFile)
+		return nil, errors.NewFromErrorCodeInfo(errors.WAVCorruptFile, "The letters `WAVE` should exist from bytes 8 to 11 in big endian form from the start of the header to indicate that it is a WAVE format file.")
 	}
 
 	// Verifies that "fmt " letters exist in big endian form
 	if (data[hOff+12] != 'f' || data[hOff+13] != 'm' || data[hOff+14] != 't' || data[hOff+15] != ' '){
-		return nil, errors.NewFromErrorCode(errors.WAVCorruptFile)
+		return nil, errors.NewFromErrorCodeInfo(errors.WAVCorruptFile, "The letters `fmt ` should exist from bytes 12 to 15 in big endian form from the start of the header to indicate the subchunk 1 ID")
 	}	
 
 	// Verifies that the "data" letters exist in big endian form
 	if (data[hOff+36] != 'd' || data[hOff+37] != 'a' || data[hOff+38] != 't' || data[hOff+39] != 'a') {
-		return nil, errors.NewFromErrorCode(errors.WAVCorruptFile)
+		return nil, errors.NewFromErrorCodeInfo(errors.WAVCorruptFile, "The letters `data` should exist from bytes 36 to 39 in big endian form from the start of the header to indicate the subchunk 2 ID.")
 	}
 
 	numChannels := binary.LittleEndian.Uint16(data[hOff+22 : hOff+24])
