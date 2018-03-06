@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	_ "github.com/nkansal96/aurora-go/errors"
+	"github.com/nkansal96/aurora-go/errors"
 
 	"github.com/gordonklaus/portaudio"
 )
@@ -112,7 +112,7 @@ func (f *File) Play() error {
 	// create the audio stream to write to
 	stream, err := portaudio.OpenDefaultStream(0, int(f.AudioData.NumChannels), float64(f.AudioData.SampleRate), BufSize, buf)
 	if err != nil {
-		return err
+		return errors.NewFromErrorCodeInfo(errors.AudioFileNilStream, err.Error());
 	}
 
 	defer stream.Close()
@@ -140,7 +140,7 @@ func (f *File) Play() error {
 		// write the converted data into the stream
 		err := stream.Write()
 		if err != nil {
-			return err
+			return errors.NewFromErrorCodeInfo(errors.AudioFileNilStream, err.Error());
 		}
 	}
 
