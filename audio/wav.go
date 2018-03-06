@@ -23,6 +23,7 @@ const (
 // WAV represents a PCM audio file in the WAV container format. It keeps
 // a high-level description of the parameters of the file, along with the
 // raw audio bytes, until it needs to be written to a file, stream, or array.
+// It is based on the WAV formatting as specified: http://soundfile.sapp.org/doc/WaveFormat/
 type WAV struct {
 	// NumChannels is the number of channels the WAV file has. 1 = mono,
 	// 2 = stereo, etc. This affects the block align and also number of
@@ -100,10 +101,11 @@ func NewWAVFromParams(params *WAVParams) *WAV {
 
 // TODO: should be checking the checksum and things like that to make sure it isn't corrupt
 func NewWAVFromData(data []byte) (*WAV, error) {
-	// find the end of subchunk2id (data)
+	// find the end of ChunkID denoted by RIFF 
+	// This marks the beginning of the WAV file
 	i := 4
-	for i < len(data) && data[i-4] != 'd' || data[i-3] != 'a' || data[i-2] != 't' || data[i-1] != 'a' {
-		i++
+	for i < len(data) && data[i-4] != 'R' || data[i-3] != 'I' || data[i-2] != 'F' || data[i-1] != 'F' {
+		i++;
 	}
 
 	dataLen := len(data) - i
@@ -113,9 +115,28 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 
 	// hOff is the header offset. Even though the header length is actually
 	// 44, we find where the data begins by looking for the letters
-	// "data" which is from bytes 36 to 39. The variable i at this point
-	// pointing to right past the "data" letters
-	hOff := i - 40
+	// "RIFF" which is from bytes 0 to 3. The variable i at this point
+	// pointing to right past the "RIFF" letters
+	hOff := i - 4
+
+	if ((len(data) - hOff - 44) < 0) {
+		return nil, errors.NewFromErrorCode(errors.WAVCorruptFile)
+	}
+
+	// Verifies that "WAVE" letters exist in big endian form
+	if (data[hOff+8] != 'W' || data[hOff+9] != 'A' || data[hOff+10] != 'V' || data[hOff+11] != 'E') {
+		return nil, errors.NewFromErrorCode(errors.WAVCorruptFile)
+	}
+
+	// Verifies that "fmt " letters exist in big endian form
+	if (data[hOff+12] != 'f' || data[hOff+13] != 'm' || data[hOff+14] != 't' || data[hOff+15] != ' '){
+		return nil, errors.NewFromErrorCode(errors.WAVCorruptFile)
+	}	
+
+	// Verifies that the "data" letters exist in big endian form
+	if (data[hOff+36] != 'd' || data[hOff+37] != 'a' || data[hOff+38] != 't' || data[hOff+39] != 'a') {
+		return nil, errors.NewFromErrorCode(errors.WAVCorruptFile)
+	}
 
 	numChannels := binary.LittleEndian.Uint16(data[hOff+22 : hOff+24])
 	sampleRate := binary.LittleEndian.Uint32(data[hOff+24 : hOff+28])
