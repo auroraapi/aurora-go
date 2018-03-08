@@ -116,7 +116,7 @@ func (f *File) Play() error {
 	// create the audio stream to write to
 	stream, err := portaudio.OpenDefaultStream(0, int(f.AudioData.NumChannels), float64(f.AudioData.SampleRate), BufSize, buf)
 	if err != nil {
-		return errors.NewFromErrorCodeInfo(errors.AudioFileNilStream, err.Error());
+		return errors.NewFromErrorCodeInfo(errors.AudioFileOutputStreamNotOpened, err.Error());
 	}
 	defer stream.Close()
 	defer stream.Stop()
