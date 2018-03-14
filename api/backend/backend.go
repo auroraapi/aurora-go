@@ -1,3 +1,8 @@
+// Package backend provides a generic interface to make calls to the Aurora
+// backend. It implements it in the `AuroraBackend` struct, which actually is
+// configured to make API calls, but others can be implemented to behave
+// differently or hit a different endpoint. This is particularly useful during
+// testing.
 package backend
 
 import (
@@ -6,7 +11,7 @@ import (
 	"net/url"
 )
 
-// MultipartFile is an in-memory representation of a file to upload
+// MultipartFile is an in-memory representation of a file to upload.
 type MultipartFile struct {
 	// Name is the form field name
 	Name string
@@ -16,7 +21,7 @@ type MultipartFile struct {
 	Data []byte
 }
 
-// CallParams describe the request to send
+// CallParams describe the request to send.
 type CallParams struct {
 	// Method is one of GET, POST, PATCH, DELETE, etc.
 	Method string
@@ -36,7 +41,7 @@ type CallParams struct {
 	Credentials *Credentials
 }
 
-// Credentials are the credentials for the API request
+// Credentials for the API request.
 type Credentials struct {
 	// AppID is the appliacation ID (sent for 'X-Application-ID' header)
 	AppID string
@@ -46,7 +51,7 @@ type Credentials struct {
 	DeviceID string
 }
 
-// Backend is an interface for a general backend that executes a given request
+// Backend is an interface for a general backend that executes a given request.
 type Backend interface {
 	// Set some properties of the backend
 	SetBaseURL(url string)

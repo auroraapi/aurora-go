@@ -1,3 +1,5 @@
+// Package api provides methods to contact the Aurora API and process
+// the given requests.
 package api
 
 // URL constants

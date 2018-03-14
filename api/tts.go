@@ -9,7 +9,7 @@ import (
 )
 
 // GetTTS calls the TTS API given some text and returns an *audio.File
-// with the audio from converting the text to speech
+// with the audio from converting the text to speech.
 func GetTTS(c *config.Config, text string) (*audio.File, error) {
 	params := &backend.CallParams{
 		Credentials: c.GetCredentials(),

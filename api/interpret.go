@@ -9,7 +9,7 @@ import (
 )
 
 // InterpretResponse is the response returned by the API if the text was
-// successfully able to be interpreted
+// successfully able to be interpreted.
 type InterpretResponse struct {
 	// Text is the original query
 	Text string `json:"text"`
@@ -25,7 +25,7 @@ type InterpretResponse struct {
 }
 
 // GetInterpret queries the API with the provided text and returns
-// the interpreted response
+// the interpreted response.
 func GetInterpret(c *config.Config, text string) (*InterpretResponse, error) {
 	params := &backend.CallParams{
 		Credentials: c.GetCredentials(),

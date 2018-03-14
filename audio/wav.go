@@ -13,7 +13,8 @@ import (
 const (
 	// DefaultNumChannels is 1 (mono audio)
 	DefaultNumChannels uint16 = 1
-	DefaultSampleRate  uint32 = 16000
+	// DefaultSampleRate is 16KHz
+	DefaultSampleRate uint32 = 16000
 	// DefaultAudioFormat is 1 (raw, uncompressed PCM waveforms)
 	DefaultAudioFormat uint16 = 1
 	// DefaultBitsPerSample is 16 (2 bytes per sample).
@@ -23,6 +24,7 @@ const (
 // WAV represents a PCM audio file in the WAV container format. It keeps
 // a high-level description of the parameters of the file, along with the
 // raw audio bytes, until it needs to be written to a file, stream, or array.
+// It is based on the WAV formatting as specified: http://soundfile.sapp.org/doc/WaveFormat/
 type WAV struct {
 	// NumChannels is the number of channels the WAV file has. 1 = mono,
 	// 2 = stereo, etc. This affects the block align and also number of
@@ -51,8 +53,7 @@ type WAVParams struct {
 	AudioData     []byte
 }
 
-// NewWAV returns a new WAV file from the default parameters. It will never
-// return an error.
+// NewWAV returns a new, empty WAV file using the default parameters.
 func NewWAV() *WAV {
 	// create a new default WAV
 	return &WAV{
@@ -65,11 +66,8 @@ func NewWAV() *WAV {
 }
 
 // NewWAVFromParams returns a new WAV file from the passed in parameters
-// If any of the numerical parameters are 0, then it will be given the default
-// values.
+// If any of the parameters are 0, it will be given the default value.
 func NewWAVFromParams(params *WAVParams) *WAV {
-	// create a WAV from the given params
-	// use defaults from previous function if any value is 0
 	if params == nil {
 		return NewWAV()
 	}
@@ -96,27 +94,43 @@ func NewWAVFromParams(params *WAVParams) *WAV {
 
 // NewWAVFromData creates a WAV format struct from the given data buffer
 // The buffer is broken up into its respective information and that
-// information is used to create the WAV format struct
 func NewWAVFromData(data []byte) (*WAV, error) {
-	// find the end of subchunk2id (data)
+	// find the end of ChunkID denoted by RIFF 
+	// This marks the beginning of the WAV file
 	i := 4
-	for i < len(data) && data[i-4] != 'd' || data[i-3] != 'a' || data[i-2] != 't' || data[i-1] != 'a' {
-		i++
+	for i < len(data) && data[i-4] != 'R' || data[i-3] != 'I' || data[i-2] != 'F' || data[i-1] != 'F' {
+		i++;
 	}
 
 	dataLen := len(data) - i
 	if dataLen <= 0 {
-		return nil, errors.Error{
-			Code:    "One",
-			Message: "Received WAV file with empty data",
-		}
+		return nil, errors.NewFromErrorCodeInfo(errors.WAVCorruptFile, "The letters `RIFF` should exist from bytes 0 to 3 in big endian form from the start of the header to indicate that it is a RIFF header.")
 	}
 
 	// hOff is the header offset. Even though the header length is actually
 	// 44, we find where the data begins by looking for the letters
-	// "data" which is from bytes 36 to 39. The variable i at this point
-	// pointing to right past the "data" letters
-	hOff := i - 40
+	// "RIFF" which is from bytes 0 to 3. The variable i at this point
+	// pointing to right past the "RIFF" letters
+	hOff := i - 4
+
+	if ((len(data) - hOff - 44) < 0) {
+		return nil, errors.NewFromErrorCode(errors.WAVCorruptFile)
+	}
+
+	// Verifies that "WAVE" letters exist in big endian form
+	if (data[hOff+8] != 'W' || data[hOff+9] != 'A' || data[hOff+10] != 'V' || data[hOff+11] != 'E') {
+		return nil, errors.NewFromErrorCodeInfo(errors.WAVCorruptFile, "The letters `WAVE` should exist from bytes 8 to 11 in big endian form from the start of the header to indicate that it is a WAVE format file.")
+	}
+
+	// Verifies that "fmt " letters exist in big endian form
+	if (data[hOff+12] != 'f' || data[hOff+13] != 'm' || data[hOff+14] != 't' || data[hOff+15] != ' '){
+		return nil, errors.NewFromErrorCodeInfo(errors.WAVCorruptFile, "The letters `fmt ` should exist from bytes 12 to 15 in big endian form from the start of the header to indicate the subchunk 1 ID")
+	}	
+
+	// Verifies that the "data" letters exist in big endian form
+	if (data[hOff+36] != 'd' || data[hOff+37] != 'a' || data[hOff+38] != 't' || data[hOff+39] != 'a') {
+		return nil, errors.NewFromErrorCodeInfo(errors.WAVCorruptFile, "The letters `data` should exist from bytes 36 to 39 in big endian form from the start of the header to indicate the subchunk 2 ID.")
+	}
 
 	numChannels := binary.LittleEndian.Uint16(data[hOff+22 : hOff+24])
 	sampleRate := binary.LittleEndian.Uint32(data[hOff+24 : hOff+28])
@@ -134,8 +148,7 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 	}, nil
 }
 
-// NewWAVFromReader takes in a reader and creates a new WAV format
-// with the given information.
+// NewWAVFromReader takes in a reader and creates a new WAV file.
 func NewWAVFromReader(reader io.Reader) (*WAV, error) {
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
@@ -197,7 +210,7 @@ func (w *WAV) AudioData() []byte {
 }
 
 // Data creates the header and data based on the WAV struct and returns
-// a fully formatted WAV file format
+// a fully formatted WAV file
 func (w *WAV) Data() []byte {
 	// find first data index
 	dataLen := len(w.audioData)

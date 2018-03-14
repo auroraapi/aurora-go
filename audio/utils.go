@@ -7,9 +7,10 @@ import (
 	"github.com/gordonklaus/portaudio"
 )
 
-// rms is a helper function used to calculate the RMS. This is called
-// by TrimSilent which uses RMS to determine whether the sample of audio
-// is silent
+// rms calculates the root-mean-square of a sequence of audio data. For
+// now, it assumes that the data is in 16-bit mono samples. Thus, the passed
+// value for `sampleSize` MUST be 2. This will change once we figure out
+// how to read a variable size of data during runtime.
 func rms(sampleSize int, audioData []byte) float64 {
 	sum := 0.0
 	for i := 0; i < len(audioData)-1; i += sampleSize {
