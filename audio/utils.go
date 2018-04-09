@@ -89,16 +89,29 @@ func record(length float64, silenceLen float64) chan *recordResponse {
 		}
 
 		// discard silence at the beginning of the recording. Why waste time with it?
+		// however, to avoid an abrupt "chopping", we want to keep some amount of silence
+
+		silenceBuf := make([]int16, 0)
+		maxLen := 16 * BufSize
+
 		for {
 			stream.Read()
+			// keep up to maxLen previous bytes
+			if len(silenceBuf) > maxLen {
+				silenceBuf = append(silenceBuf[:maxLen], buf...)
+			} else {
+				silenceBuf = append(silenceBuf, buf...)
+			}
+			// check silence here so that we don't have a gap of size BufSize from the audio stream
 			if !isSilent(buf) {
-				prch <- &recordResponse{nil, buf, nil}
 				break
 			}
 		}
 
-		// read data until the specified amount of silence or until the
-		// specified amount of length
+		// send the recorded silence over to the processing function
+		prch <- &recordResponse{nil, silenceBuf, nil}
+
+		// read data until the specified amount of silence or until the specified amount of length
 		dataLen := 0
 		silentFor := 0.0
 		for {
