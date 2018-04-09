@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/url"
 
-	"github.com/nkansal96/aurora-go/api/backend"
-	"github.com/nkansal96/aurora-go/config"
+	"github.com/auroraapi/aurora-go/api/backend"
+	"github.com/auroraapi/aurora-go/config"
 )
 
 // InterpretResponse is the response returned by the API if the text was

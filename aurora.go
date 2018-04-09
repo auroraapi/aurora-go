@@ -3,7 +3,7 @@
 package aurora
 
 import (
-	"github.com/nkansal96/aurora-go/config"
+	"github.com/auroraapi/aurora-go/config"
 )
 
 // Config is an alias for config.C so that you can easily

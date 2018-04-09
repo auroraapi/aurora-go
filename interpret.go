@@ -1,7 +1,7 @@
 package aurora
 
 import (
-	"github.com/nkansal96/aurora-go/api"
+	"github.com/auroraapi/aurora-go/api"
 )
 
 // Interpret contains the results from a call to the Aurora Interpret service.

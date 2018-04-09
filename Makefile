@@ -6,10 +6,10 @@ build-ash:
 	docker build --build-arg id_rsa='$(ID_RSA)' -f Dockerfile.build -t aurora-builder .
 
 ash: build-ash
-	docker run -v "$$(pwd):/go/src/github.com/nkansal96/$(APP_NAME)" -it aurora-builder
+	docker run -v "$$(pwd):/go/src/github.com/auroraapi/$(APP_NAME)" -it aurora-builder
 
 check: build-ash
-	docker run -v "$$(pwd):/go/src/github.com/nkansal96/$(APP_NAME)" -it aurora-builder /bin/ash -c "cd /go/src/github.com/nkansal96/$(APP_NAME) && go build . && gofmt -w ."
+	docker run -v "$$(pwd):/go/src/github.com/auroraapi/$(APP_NAME)" -it aurora-builder /bin/ash -c "cd /go/src/github.com/auroraapi/$(APP_NAME) && go build . && gofmt -w ."
 
 build:
 	docker build --build-arg id_rsa='$(ID_RSA)' -t $(APP_NAME) .

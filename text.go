@@ -1,7 +1,7 @@
 package aurora
 
 import (
-	"github.com/nkansal96/aurora-go/api"
+	"github.com/auroraapi/aurora-go/api"
 )
 
 // Text encapsulates some text, whether it is obtained from STT, a user input,

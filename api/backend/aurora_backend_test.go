@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/nkansal96/aurora-go/api/backend"
-	"github.com/nkansal96/aurora-go/errors"
+	"github.com/auroraapi/aurora-go/api/backend"
+	"github.com/auroraapi/aurora-go/errors"
 	"github.com/stretchr/testify/require"
 )
 

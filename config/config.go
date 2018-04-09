@@ -3,7 +3,7 @@
 package config
 
 import (
-	"github.com/nkansal96/aurora-go/api/backend"
+	"github.com/auroraapi/aurora-go/api/backend"
 )
 
 // Config configures the parameters that this SDK will use to operate

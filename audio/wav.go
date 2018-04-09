@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"math"
 
-	"github.com/nkansal96/aurora-go/errors"
+	"github.com/auroraapi/aurora-go/errors"
 )
 
 // WAV-related constants.
@@ -95,11 +95,11 @@ func NewWAVFromParams(params *WAVParams) *WAV {
 // NewWAVFromData creates a WAV format struct from the given data buffer
 // The buffer is broken up into its respective information and that
 func NewWAVFromData(data []byte) (*WAV, error) {
-	// find the end of ChunkID denoted by RIFF 
+	// find the end of ChunkID denoted by RIFF
 	// This marks the beginning of the WAV file
 	i := 4
 	for i < len(data) && data[i-4] != 'R' || data[i-3] != 'I' || data[i-2] != 'F' || data[i-1] != 'F' {
-		i++;
+		i++
 	}
 
 	dataLen := len(data) - i
@@ -113,22 +113,22 @@ func NewWAVFromData(data []byte) (*WAV, error) {
 	// pointing to right past the "RIFF" letters
 	hOff := i - 4
 
-	if ((len(data) - hOff - 44) < 0) {
+	if (len(data) - hOff - 44) < 0 {
 		return nil, errors.NewFromErrorCode(errors.WAVCorruptFile)
 	}
 
 	// Verifies that "WAVE" letters exist in big endian form
-	if (data[hOff+8] != 'W' || data[hOff+9] != 'A' || data[hOff+10] != 'V' || data[hOff+11] != 'E') {
+	if data[hOff+8] != 'W' || data[hOff+9] != 'A' || data[hOff+10] != 'V' || data[hOff+11] != 'E' {
 		return nil, errors.NewFromErrorCodeInfo(errors.WAVCorruptFile, "The letters `WAVE` should exist from bytes 8 to 11 in big endian form from the start of the header to indicate that it is a WAVE format file.")
 	}
 
 	// Verifies that "fmt " letters exist in big endian form
-	if (data[hOff+12] != 'f' || data[hOff+13] != 'm' || data[hOff+14] != 't' || data[hOff+15] != ' '){
+	if data[hOff+12] != 'f' || data[hOff+13] != 'm' || data[hOff+14] != 't' || data[hOff+15] != ' ' {
 		return nil, errors.NewFromErrorCodeInfo(errors.WAVCorruptFile, "The letters `fmt ` should exist from bytes 12 to 15 in big endian form from the start of the header to indicate the subchunk 1 ID")
-	}	
+	}
 
 	// Verifies that the "data" letters exist in big endian form
-	if (data[hOff+36] != 'd' || data[hOff+37] != 'a' || data[hOff+38] != 't' || data[hOff+39] != 'a') {
+	if data[hOff+36] != 'd' || data[hOff+37] != 'a' || data[hOff+38] != 't' || data[hOff+39] != 'a' {
 		return nil, errors.NewFromErrorCodeInfo(errors.WAVCorruptFile, "The letters `data` should exist from bytes 36 to 39 in big endian form from the start of the header to indicate the subchunk 2 ID.")
 	}
 

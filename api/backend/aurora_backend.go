@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nkansal96/aurora-go/errors"
+	"github.com/auroraapi/aurora-go/errors"
 )
 
 const (

@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	aurora "github.com/nkansal96/aurora-go"
-	"github.com/nkansal96/aurora-go/errors"
+	aurora "github.com/auroraapi/aurora-go"
+	"github.com/auroraapi/aurora-go/errors"
 	"github.com/stretchr/testify/require"
 )
 

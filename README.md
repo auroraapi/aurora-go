@@ -17,14 +17,14 @@ The Go SDK currently does not bundle the necessary system headers and binaries t
 
 ```
 $ brew install portaudio pkg-config
-$ go get -u github.com/nkansal96/aurora-go
+$ go get -u github.com/auroraapi/aurora-go
 ```
 
 ### Linux
 
 ```
 $ sudo apt-get install libportaudio-dev pkg-config
-$ go get -u github.com/nkansal96/aurora-go
+$ go get -u github.com/auroraapi/aurora-go
 ```
 
 This will install `PortAudio` and `pkg-config`. Use `yum` if your distribution uses `RPM`-based packages. If your distribution does not have `PortAudio` in its repository, install [PortAudio via source](http://www.portaudio.com/download.html).
@@ -40,7 +40,7 @@ First, make sure you have an account with [Aurora](http://dashboard.auroraapi.co
 package main
 
 import (
-  "github.com/nkansal96/aurora-go"
+  "github.com/auroraapi/aurora-go"
 )
 
 func main() {
@@ -72,8 +72,8 @@ package main
 
 import (
   "fmt"
-  "github.com/nkansal96/aurora-go"
-  "github.com/nkansal96/aurora-go/audio"
+  "github.com/auroraapi/aurora-go"
+  "github.com/auroraapi/aurora-go/audio"
 )
 
 func main() {
@@ -104,7 +104,7 @@ package main
 
 import (
   "fmt"
-  "github.com/nkansal96/aurora-go"
+  "github.com/auroraapi/aurora-go"
 )
 
 func main() {
@@ -135,7 +135,7 @@ package main
 
 import (
   "fmt"
-  "github.com/nkansal96/aurora-go"
+  "github.com/auroraapi/aurora-go"
 )
 
 func main() {
@@ -173,7 +173,7 @@ package main
 
 import (
   "fmt"
-  "github.com/nkansal96/aurora-go"
+  "github.com/auroraapi/aurora-go"
 )
 
 func main() {
@@ -212,7 +212,7 @@ package main
 
 import (
   "fmt"
-  "github.com/nkansal96/aurora-go"
+  "github.com/auroraapi/aurora-go"
 )
 
 // this callback is passed to ContinuouslyListen. It is called every time a
@@ -269,7 +269,7 @@ package main
 
 import (
   "fmt"
-  "github.com/nkansal96/aurora-go"
+  "github.com/auroraapi/aurora-go"
 )
 
 // this callback is passed to ContinuouslyListenAndTranscribe. It is called
@@ -316,7 +316,7 @@ package main
 
 import (
   "fmt"
-  "github.com/nkansal96/aurora-go"
+  "github.com/auroraapi/aurora-go"
 )
 
 func listenCallback(t *aurora.Text, err error) bool {
@@ -357,7 +357,7 @@ package main
 
 import (
   "fmt"
-  "github.com/nkansal96/aurora-go"
+  "github.com/auroraapi/aurora-go"
 )
 
 func main() {
@@ -393,7 +393,7 @@ import (
   "bufio"
   "fmt"
   "os"
-  "github.com/nkansal96/aurora-go"
+  "github.com/auroraapi/aurora-go"
 )
 
 func main() {
@@ -427,7 +427,7 @@ This example shows how easy it is to voice-enable a smart lamp. It responds to q
 package main
 
 import (
-  "github.com/nkansal96/aurora-go"
+  "github.com/auroraapi/aurora-go"
 )
 
 // handle what the user said

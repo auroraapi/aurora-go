@@ -3,9 +3,9 @@ package api
 import (
 	"net/url"
 
-	"github.com/nkansal96/aurora-go/api/backend"
-	"github.com/nkansal96/aurora-go/audio"
-	"github.com/nkansal96/aurora-go/config"
+	"github.com/auroraapi/aurora-go/api/backend"
+	"github.com/auroraapi/aurora-go/audio"
+	"github.com/auroraapi/aurora-go/config"
 )
 
 // GetTTS calls the TTS API given some text and returns an *audio.File

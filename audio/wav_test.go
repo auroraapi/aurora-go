@@ -6,18 +6,18 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nkansal96/aurora-go/audio"
-	"github.com/nkansal96/aurora-go/config"
-	"github.com/nkansal96/aurora-go/errors"
-	"github.com/nkansal96/aurora-go/testutils"
+	"github.com/auroraapi/aurora-go/audio"
+	"github.com/auroraapi/aurora-go/config"
+	"github.com/auroraapi/aurora-go/errors"
+	"github.com/auroraapi/aurora-go/testutils"
 	"github.com/stretchr/testify/require"
 )
 
 var apiErrorType *errors.APIError
 var c *config.Config
 
-// This test checks that if the NewWAV function is called, a correctly 
-// formatted struct is created with the default parameters 
+// This test checks that if the NewWAV function is called, a correctly
+// formatted struct is created with the default parameters
 // as specified by the constants in the aduio package
 func TestNewWAV(t *testing.T) {
 	wav := audio.NewWAV()
@@ -74,14 +74,13 @@ func TestNewWAVFromData(t *testing.T) {
 	require.Equal(t, 0, len(wav.AudioData()))
 }
 
-// When given bytes of data where the first couple of bytes is not part of the 
+// When given bytes of data where the first couple of bytes is not part of the
 // data file, then those parts should be regarded in reader the WAV header
-func TestNewWAVFromData(t *testing.T) {
-	buff := []byte{0x12, 0x34, 0x56, 0x78};
+func TestNewWAVFromDataWithNoise(t *testing.T) {
+	buff := []byte{0x12, 0x34, 0x56, 0x78}
 	emptyWAVFile := testutils.CreateEmptyWAVFile()
-	buffWith
 
-	wav, err := audio.NewWAVFromData(append(buff, emptyWAVFile))
+	wav, err := audio.NewWAVFromData(append(buff, emptyWAVFile...))
 	require.Nil(t, err)
 	require.Equal(t, uint16(1), wav.NumChannels)
 	require.Equal(t, uint32(44100), wav.SampleRate)
@@ -89,7 +88,7 @@ func TestNewWAVFromData(t *testing.T) {
 	require.Equal(t, 0, len(wav.AudioData()))
 }
 
-// A new reader with bytes of data should be properly parsed into a new 
+// A new reader with bytes of data should be properly parsed into a new
 // WAV struct
 func TestNewWAVFromReader(t *testing.T) {
 	emptyWAVFile := testutils.CreateEmptyWAVFile()
@@ -117,7 +116,7 @@ func TestAddAudioData(t *testing.T) {
 	require.Equal(t, 4, len(wav.AudioData()))
 }
 
-// If AddAudioData function is called on an empty set of bytes, 
+// If AddAudioData function is called on an empty set of bytes,
 // the wav structure should remain the same
 func TestAddAudioDataEmpty(t *testing.T) {
 	emptyWAVFile := testutils.CreateEmptyWAVFile()

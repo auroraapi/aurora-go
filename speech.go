@@ -1,9 +1,9 @@
 package aurora
 
 import (
-	"github.com/nkansal96/aurora-go/api"
-	"github.com/nkansal96/aurora-go/audio"
-	"github.com/nkansal96/aurora-go/errors"
+	"github.com/auroraapi/aurora-go/api"
+	"github.com/auroraapi/aurora-go/audio"
+	"github.com/auroraapi/aurora-go/errors"
 )
 
 const (

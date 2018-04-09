@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/nkansal96/aurora-go/api/backend"
-	"github.com/nkansal96/aurora-go/audio"
-	"github.com/nkansal96/aurora-go/config"
+	"github.com/auroraapi/aurora-go/api/backend"
+	"github.com/auroraapi/aurora-go/audio"
+	"github.com/auroraapi/aurora-go/config"
 )
 
 // STTResponse is the response returned by the API if the speech was
